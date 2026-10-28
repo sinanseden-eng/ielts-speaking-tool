@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#193f3b">
+  <meta name="description" content="Find your voice with six connected IELTS Speaking themes. Practise all three parts with word banks, guiding phrases, saved notes, manual timers and checklists.">
+  <title>Speaking Studio · IELTS Practice</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./content.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#task-title">Skip to your task</a>
+  <aside class="sidebar" aria-label="Practice navigation">
+    <a class="brand" href="./" aria-label="Speaking Studio home"><span class="brand-icon" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>speaking<span class="brand-light">studio.</span></span></a>
+    <div class="sidebar-label">YOUR PRACTICE SPACE</div>
+    <nav id="part-nav" aria-label="Speaking parts"></nav>
+    <div class="sidebar-note"><span class="tiny-star" aria-hidden="true">✳</span><strong>A little practice.<br>A lot more confidence.</strong><p>Think it. Say it. Make it yours.</p></div>
+    <div class="sidebar-bottom"><span class="online-dot"></span><span>Made for independent practice</span></div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar"><div class="breadcrumb">IELTS Speaking <span>/</span> <strong id="breadcrumb-part">Part 1</strong></div><div class="header-actions"><button class="text-button" id="how-button">How to practise <span aria-hidden="true">↗</span></button><button class="outline-button" id="assessment-button">Assessment guide <span aria-hidden="true">↗</span></button></div></header>
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy"><div class="eyebrow"><span class="pill-dot"></span> YOUR VOICE. YOUR IDEAS.</div><h1 id="hero-title">Small talk.<br>Big possibilities.</h1><p>Build your confidence, one conversation at a time.</p><div class="hero-meta"><span>3 speaking parts</span><span>6 connected themes</span><span>At your own pace</span></div></div>
+        <div class="hero-art" aria-hidden="true"><svg viewBox="0 0 400 240"><defs><pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse"><path d="M30 0H0V30" fill="none" stroke="#ffffff" stroke-opacity=".08"/></pattern></defs><rect width="400" height="240" fill="url(#grid)"/><circle cx="282" cy="85" r="47" fill="#e8ba70"/><path d="M18 204Q100 116 193 204T403 179V240H18Z" fill="#47736b"/><path d="M77 150L139 96L199 150V226H77Z" fill="#f4e8d4"/><path d="M64 152L139 86L214 152" stroke="#e89777" stroke-width="13" fill="none" stroke-linejoin="round"/><path d="M120 226V177Q139 161 157 177V226" fill="#244e48"/><rect x="91" y="158" width="19" height="22" rx="3" fill="#e6b670"/><rect x="167" y="158" width="19" height="22" rx="3" fill="#e6b670"/><path d="M279 226V151" stroke="#b5c7a6" stroke-width="7"/><ellipse cx="279" cy="142" rx="29" ry="46" fill="#93b5a1"/><path d="M224 55Q224 35 245 35H310Q331 35 331 55V75Q331 95 310 95H277L258 113V95H245Q224 95 224 75Z" fill="#fff"/><circle cx="249" cy="65" r="4" fill="#315d53"/><circle cx="277" cy="65" r="4" fill="#315d53"/><circle cx="305" cy="65" r="4" fill="#315d53"/><path d="M341 133l5 12 13 4-13 4-5 13-4-13-13-4 13-4Z" fill="#e89777"/><path d="M71 73l3 8 9 3-9 3-3 9-3-9-9-3 9-3Z" fill="#e8ba70"/></svg><div class="art-caption">Good ideas start with a conversation.</div></div>
+      </section>
+      <section class="theme-bar" aria-label="Theme selection"><div class="theme-label"><span class="round-icon" aria-hidden="true">◈</span><div><span class="overline">TODAY’S CONTEXT</span><strong id="theme-name"></strong></div></div><button id="theme-button" class="theme-button" aria-haspopup="dialog">Change theme <span aria-hidden="true">⌄</span></button></section>
+      <div class="part-heading"><div><div class="section-kicker" id="part-kicker"></div><h2 id="part-heading"></h2><p id="part-description"></p></div><span class="duration-label" id="part-duration"></span></div>
+      <div class="practice-grid">
+        <div class="task-column">
+          <section class="card task-card" aria-labelledby="task-title"><div class="card-topline"><span class="overline" id="task-label"></span><span class="small-badge" id="task-count"></span></div><div id="task-content"></div><div id="question-navigation"></div></section>
+          <section class="card practise-card" aria-labelledby="practise-title"><div class="section-title-row"><h3 id="practise-title"><span class="title-icon" aria-hidden="true">↗</span> Practise</h3><span class="save-status" id="save-status" role="status">Saved on this device</span></div><p class="muted practice-help" id="practice-help"></p><label class="notes-label" for="student-notes">Your notes <span>Keywords, examples, a story to tell…</span></label><textarea id="student-notes" rows="5" placeholder="Start with a few ideas. You don’t need a full script." maxlength="15000"></textarea><div class="note-foot"><span id="notes-count">0 words</span><button class="text-button" id="download-button">Export practice <span aria-hidden="true">↓</span></button></div><div class="timer-area"><div class="timer-top"><div><span class="overline">YOUR PRACTICE CLOCK</span><p id="timer-caption"></p></div><div class="timer-presets" id="timer-presets" aria-label="Timer duration"></div></div><div class="timer-controls"><div class="clock" id="clock" role="timer" aria-label="Time remaining">04:00</div><div class="clock-buttons"><button id="timer-start" class="primary-button"><span aria-hidden="true">▶</span> Start clock</button><button id="timer-reset" class="icon-button" aria-label="Reset clock" title="Reset clock">↺</button></div></div><div class="timer-track"><span id="timer-progress"></span></div><p id="timer-message" class="timer-message" role="status">Ready when you are.</p></div></section>
+          <section class="card checklist-card" aria-labelledby="checklist-title"><div class="section-title-row"><h3 id="checklist-title"><span class="title-icon" aria-hidden="true">✓</span> Before you move on</h3><span class="small-badge" id="checklist-count"></span></div><p class="muted">Listen to yourself. Notice one thing you did well, and one to work on.</p><div id="checklist"></div><label class="notes-label next-step-label" for="next-step">One thing I’ll improve next time</label><textarea id="next-step" rows="2" placeholder="For example: give a specific example before moving on." maxlength="2000"></textarea><div class="completion-row"><span id="completion-caption"></span><button class="primary-button" id="complete-button">Finish this task <span aria-hidden="true">→</span></button></div></section>
+          <div class="next-part" id="next-part"></div>
+        </div>
+        <aside class="resources" aria-label="Speaking support"><section class="card resource-card"><div class="resource-heading"><span class="round-icon mint" aria-hidden="true">✧</span><h3>A little language help</h3></div><p class="muted">A starting point. Let your own ideas do the talking.</p><div class="resource-tabs" role="tablist" aria-label="Language support"><button role="tab" id="words-tab" aria-controls="resource-content" aria-selected="true" data-resource="words">Word bank</button><button role="tab" id="phrases-tab" aria-controls="resource-content" aria-selected="false" data-resource="phrases" tabindex="-1">Guiding phrases</button></div><div id="resource-content" role="tabpanel" aria-labelledby="words-tab"></div><div class="resource-tip"><span aria-hidden="true">☀</span><p>Choose language that fits your meaning. Clear and natural beats memorised.</p></div></section><section class="tip-card"><span class="overline">STUDIO NOTE</span><h3 id="studio-tip-title"></h3><p id="studio-tip"></p><button id="criteria-link" class="text-button">Explore the assessment criteria <span aria-hidden="true">↗</span></button></section><div class="local-note"><span aria-hidden="true">◎</span><p>Your notes stay in this browser. Export a copy to keep or share your practice.</p></div></aside>
+      </div>
+      <footer><span>speakingstudio. <span class="footer-sep">/</span> A little better, every time.</span><button class="text-button" id="how-footer">How to practise ↗</button><a href="https://ielts.org/take-a-test/test-types/ielts-academic-test/ielts-academic-format-speaking" target="_blank" rel="noopener noreferrer">Official IELTS Speaking format ↗</a><p>Independent practice resource. Original practice prompts; not affiliated with or endorsed by IELTS. Theme-linked Part 1 questions are a learning activity; the real interview covers a range of familiar topics.</p></footer>
+    </main>
+  </div>
+  <dialog id="theme-dialog" class="theme-dialog" aria-labelledby="theme-dialog-title"><div class="dialog-heading"><div><span class="overline">A NEW CONVERSATION</span><h2 id="theme-dialog-title">What will you talk about?</h2></div><button class="icon-button dialog-close" aria-label="Close theme selection">×</button></div><p class="muted">One context connects all three parts. Your saved work stays with each theme.</p><div id="theme-options"></div></dialog>
+  <dialog id="info-dialog" class="info-dialog" aria-labelledby="info-title"><div class="dialog-heading"><h2 id="info-title"></h2><button class="icon-button dialog-close" aria-label="Close guide">×</button></div><div id="info-content"></div></dialog>
+  <div id="toast" class="toast" role="status"></div>
+  <noscript><p class="noscript">Please enable JavaScript to use the speaking tasks, timers and saved notes.</p></noscript>
+</body>
+</html>

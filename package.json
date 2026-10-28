@@ -1,0 +1,9 @@
+{
+  "name": "ielts-speaking-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Theme-based IELTS speaking practice with language support, notes, manual timers and reflection.",
+  "scripts": {
+    "check": "node --check dist/app.js && node --check dist/content.js && node tests/content.test.mjs"
+  }
+}
