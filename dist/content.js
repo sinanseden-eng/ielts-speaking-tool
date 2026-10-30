@@ -18,7 +18,7 @@ window.STUDIO = {
   },
   themes: [
     {
-      id:'home', name:'Home & hometown', icon:'⌂', subtitle:'Places, people and a sense of belonging', color:'#e9e1c9',
+      id:'home', name:'Home & hometown', icon:'⌂', subtitle:'Places, people and a sense of belonging', color:'#ffe5b5',
       context:'From your neighbourhood to the future of our cities.',
       starter:{p1:'What I like most about my neighbourhood is…',p2:'The place that comes to mind is…, because…',p3:'A strong community can make a difference by…'},
       p1:[
@@ -45,7 +45,7 @@ window.STUDIO = {
       }
     },
     {
-      id:'travel',name:'Travel & discovery',icon:'↗',subtitle:'Everyday journeys and memorable discoveries',color:'#e5d9cb',context:'From your daily journeys to the impact of global tourism.',
+      id:'travel',name:'Travel & discovery',icon:'↗',subtitle:'Everyday journeys and memorable discoveries',color:'#ffd9e3',context:'From your daily journeys to the impact of global tourism.',
       starter:{p1:'For short journeys, I usually…, mainly because…',p2:'One trip I still remember clearly is…',p3:'Tourism can benefit local communities if…'},
       p1:[['Getting around','How do you usually travel to work or school?','Describe your routine and one reason for your choice.'],['Short trips','Do you prefer travelling alone or with other people?','Give a preference and a small example.'],['Your local area','Is there somewhere near your home you would recommend to visitors?','Name a place and explain its appeal.'],['Travel plans','Do you like planning trips in advance?','Explain what you normally organise, or leave open.'],['Past journeys','Did you often visit new places when you were a child?','Use a past tense and one memory.'],['Discovering places','What kind of place would you like to visit next?','Give one or two specific reasons.']],
       p2:{title:'Describe a trip you took that you remember well.',bullets:['where you went','who you travelled with, if anyone','what you did during the trip'],end:'and explain why this trip was memorable.',followups:['Would you take the same trip again?','Do you have any photographs from that trip?']},
@@ -57,7 +57,7 @@ window.STUDIO = {
       }
     },
     {
-      id:'technology',name:'Technology & daily life',icon:'⌘',subtitle:'Helpful tools and a changing world',color:'#dbe4e3',context:'From the tools you use to the way technology changes society.',
+      id:'technology',name:'Technology & daily life',icon:'⌘',subtitle:'Helpful tools and a changing world',color:'#dce8ff',context:'From the tools you use to the way technology changes society.',
       starter:{p1:'The device I rely on most is…, because…',p2:'I first started using it when…',p3:'The benefits depend partly on how people use…'},
       p1:[['Daily habits','What piece of technology do you use most often?','Name it and describe one everyday use.'],['Work or studies','How do you use technology for work or study?','Give an example of a task it helps you complete.'],['Staying in touch','Do you prefer sending messages or making phone calls?','Explain when you choose each one.'],['Learning something new','Is it easy for you to learn to use a new app?','Describe how you usually get started.'],['Screen time','Do you ever take a break from your phone?','Say when, and how it feels.'],['Changes over time','Has the way you use technology changed in recent years?','Compare a past habit with your current routine.']],
       p2:{title:'Describe a piece of technology that has made your daily life easier.',bullets:['what it is','when you started using it','how you use it'],end:'and explain how it has made your life easier.',followups:['Would you recommend it to someone else?','Do you think you will keep using it?']},
@@ -69,7 +69,7 @@ window.STUDIO = {
       }
     },
     {
-      id:'learning',name:'Learning & skills',icon:'✎',subtitle:'Curiosity, challenges and small breakthroughs',color:'#e6dfc7',context:'From your study habits to the purpose of education.',
+      id:'learning',name:'Learning & skills',icon:'✎',subtitle:'Curiosity, challenges and small breakthroughs',color:'#f0ddff',context:'From your study habits to the purpose of education.',
       starter:{p1:'I find it easier to learn when…',p2:'The skill took time to learn, but…',p3:'Education can prepare people for change by…'},
       p1:[['Your studies','What do you enjoy learning about?','Pick a subject and explain what interests you.'],['Study habits','Do you prefer studying alone or with other people?','Explain what works for you and why.'],['Your routine','When do you find it easiest to concentrate?','Describe a time or place and one helpful condition.'],['New skills','Is there a skill you would like to learn?','Say what it is and how you might use it.'],['Childhood learning','Did you enjoy reading when you were a child?','Describe a memory or a type of book.'],['Getting help','What do you do when you find something difficult to learn?','Explain a strategy and give an example.']],
       p2:{title:'Describe a useful skill you learned from another person.',bullets:['what the skill was','who helped you learn it','how you learned it'],end:'and explain why this skill has been useful to you.',followups:['Do you use this skill often?','Have you taught this skill to anyone else?']},
@@ -81,7 +81,7 @@ window.STUDIO = {
       }
     },
     {
-      id:'nature',name:'Nature & outdoors',icon:'❋',subtitle:'Green spaces and the world around us',color:'#dce5d3',context:'From time outdoors to protecting the natural world.',
+      id:'nature',name:'Nature & outdoors',icon:'❋',subtitle:'Green spaces and the world around us',color:'#e4dcff',context:'From time outdoors to protecting the natural world.',
       starter:{p1:'When I have time outdoors, I usually…',p2:'What made this outdoor place special was…',p3:'Protecting natural spaces can benefit communities by…'},
       p1:[['Daily life','How often do you spend time outdoors?','Describe a normal week and an activity.'],['Green spaces','Are there any parks near where you live?','Say what one is like, or describe what is missing.'],['Your preferences','What kind of weather do you enjoy most?','Explain how it affects what you like to do.'],['Childhood','Did you spend much time in nature as a child?','Recall a place or a regular activity.'],['Activities','Would you rather walk in a city or in the countryside?','Compare one feature that matters to you.'],['Plans','Is there an outdoor activity you would like to try?','Explain what attracts you to it.']],
       p2:{title:'Describe an outdoor place you visited and enjoyed.',bullets:['where the place was','when you visited it','what you saw or did there'],end:'and explain how you felt about spending time there.',followups:['Would you like to go back?','Is this a popular place with visitors?']},
@@ -93,7 +93,7 @@ window.STUDIO = {
       }
     },
     {
-      id:'food',name:'Food & traditions',icon:'♧',subtitle:'Everyday tastes and the stories they carry',color:'#efddcf',context:'From everyday meals to the role of food in culture.',
+      id:'food',name:'Food & traditions',icon:'♧',subtitle:'Everyday tastes and the stories they carry',color:'#ffd9cd',context:'From everyday meals to the role of food in culture.',
       starter:{p1:'A meal I always look forward to is…',p2:'This meal was special to me because…',p3:'Food traditions can bring people together by…'},
       p1:[['Everyday food','What kind of food do you enjoy eating most?','Give a preference and explain its appeal.'],['Cooking','Do you enjoy preparing meals?','Describe what you cook, or why you prefer not to.'],['Family routines','How often do you eat with your family or friends?','Describe a routine and what you enjoy about it.'],['Your local area','Is there a good place to eat near your home?','Name a type of place and one detail you like.'],['Childhood','Have your food preferences changed since you were a child?','Compare one past preference with the present.'],['Trying new things','Do you like trying food you have never eaten before?','Support your answer with a small example.']],
       p2:{title:'Describe a special meal you shared with other people.',bullets:['when and where you had the meal','who you shared it with','what you ate'],end:'and explain why this meal was special to you.',followups:['Would you like to have that meal again?','Did you help prepare the meal?']},

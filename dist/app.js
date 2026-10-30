@@ -3,6 +3,7 @@
   const DATA = window.STUDIO;
   const $ = (id) => document.getElementById(id);
   const escape = (value) => String(value).replace(/[&<>"']/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  const highlightPrompt = (value) => escape(value).replace(/^(Describe|What|Why|How|Where|When|Who|Which|Would|Should|Could|Can|Do|Does|Did|Is|Are|Has|Have)\b/, '<mark class="prompt-highlight">$1</mark>');
   const STORAGE_KEY = 'speaking-studio-v1';
   let storageAvailable = true;
   let saved;
@@ -73,11 +74,11 @@
     $('task-count').textContent = state.part === 'p2' ? '1 min prep · up to 2 min talk' : `${String(i+1).padStart(2,'0')} / ${String(count).padStart(2,'0')}`;
     if (state.part === 'p2') {
       const cue = t.p2;
-      $('task-content').innerHTML = `<h3 id="task-title" tabindex="-1">${escape(cue.title)}</h3><p class="cue-lead">You should say:</p><ul class="cue-bullets">${cue.bullets.map(b=>`<li>${escape(b)}</li>`).join('')}</ul><p class="cue-end">${escape(cue.end)}</p><details class="followups"><summary>Finish with a brief follow-up</summary><ul>${cue.followups.map(q=>`<li>${escape(q)}</li>`).join('')}</ul></details>`;
+      $('task-content').innerHTML = `<h3 id="task-title" tabindex="-1">${highlightPrompt(cue.title)}</h3><p class="cue-lead">You should say:</p><ul class="cue-bullets">${cue.bullets.map(b=>`<li>${escape(b)}</li>`).join('')}</ul><p class="cue-end">${escape(cue.end).replace(/explain/, '<mark class="instruction-highlight">explain</mark>')}</p><details class="followups"><summary>Finish with a brief follow-up</summary><ul>${cue.followups.map(q=>`<li>${escape(q)}</li>`).join('')}</ul></details>`;
       $('question-navigation').innerHTML = '';
     } else {
       const question = t[state.part][i];
-      $('task-content').innerHTML = `<div class="task-topic">${escape(question[0])}</div><h3 id="task-title" tabindex="-1">${escape(question[1])}</h3><p class="task-tip"><strong>A way in:</strong> ${escape(question[2])}</p>`;
+      $('task-content').innerHTML = `<div class="task-topic">${escape(question[0])}</div><h3 id="task-title" tabindex="-1">${highlightPrompt(question[1])}</h3><p class="task-tip"><strong>A way in:</strong> ${escape(question[2])}</p>`;
       $('question-navigation').innerHTML = `<div class="question-navigation"><div class="question-dots" aria-label="Choose a question">${t[state.part].map((q,j)=>`<button class="question-dot ${j===i?'active':''} ${taskData(`${indexKey()}-${j}`).done?'done':''}" data-question="${j}" aria-label="Question ${j+1}${taskData(`${indexKey()}-${j}`).done?', practised':''}" ${j===i?'aria-current="true"':''}>${j+1}</button>`).join('')}</div><div class="question-arrows"><button class="icon-button" id="previous-question" aria-label="Previous question" ${i===0?'disabled':''}>←</button><button class="icon-button" id="next-question" aria-label="Next question" ${i===count-1?'disabled':''}>→</button></div></div><details class="all-questions"><summary>See all ${count} questions in this set</summary><ol>${t[state.part].map((q,j)=>`<li><button data-question="${j}">${escape(q[1])}</button></li>`).join('')}</ol></details>`;
     }
     const task = taskData();
@@ -116,6 +117,7 @@
   }
   function render() {
     const p = part();
+    $('main').dataset.part = state.part;
     $('theme-name').textContent = theme().name;
     $('theme-button').setAttribute('aria-label',`Change theme. Current theme: ${theme().name}`);
     $('breadcrumb-part').textContent = 'Part '+state.part.slice(1);
