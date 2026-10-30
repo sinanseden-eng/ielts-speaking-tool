@@ -26,6 +26,23 @@ Visit `http://localhost:8080`. Use the same origin when returning to saved pract
 
 ## Deploy
 
+### Netlify with GitHub
+
+Connect this repository and select the `main` branch. The root `netlify.toml` sets the build and publish locations automatically:
+
+| Setting | Value |
+| --- | --- |
+| Framework preset | None / Other |
+| Base directory | Repository root (`.`) |
+| Build command | `npm run build` |
+| Publish directory | `dist` |
+
+The build command validates the existing static files; it does not require a bundler or any dependencies. No API keys or environment variables are required. Netlify must publish the contents of `dist`, so that `dist/index.html` becomes the site's `/index.html`. Publishing the repository root leaves the homepage missing.
+
+For an already connected project, pushing this configuration to `main` triggers its normal Git deployment. If automatic builds are paused, choose **Trigger deploy → Deploy site** in the Netlify Deploys tab. Netlify's root file configuration overrides matching build and publish settings in its dashboard.
+
+### Other static hosts
+
 Publish the `dist` directory on any static host. For GitHub Pages, the included manual workflow uploads `dist` without a build: enable Pages with **GitHub Actions** as its source in repository settings, then run **Deploy static site to Pages** from the Actions tab. Pages deployment is not automatically enabled by creating the source files.
 
 ## Development

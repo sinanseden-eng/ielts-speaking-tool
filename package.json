@@ -4,6 +4,7 @@
   "private": true,
   "description": "Theme-based IELTS speaking practice with language support, notes, manual timers and reflection.",
   "scripts": {
+    "build": "npm run check",
     "check": "node --check dist/app.js && node --check dist/content.js && node tests/content.test.mjs"
   }
 }

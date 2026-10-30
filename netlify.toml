@@ -1,0 +1,8 @@
+# The app is already static: validate it, then publish its finished files.
+[build]
+  base = "."
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
