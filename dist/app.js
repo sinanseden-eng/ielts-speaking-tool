@@ -1,6 +1,7 @@
 'use strict';
 (() => {
   const DATA = window.STUDIO;
+  const PLAN = window.STUDIO_PLANNER;
   const $ = (id) => document.getElementById(id);
   const escape = (value) => String(value).replace(/[&<>"']/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   const highlightPrompt = (value) => escape(value).replace(/^(Describe|What|Why|How|Where|When|Who|Which|Would|Should|Could|Can|Do|Does|Did|Is|Are|Has|Have)\b/, '<mark class="prompt-highlight">$1</mark>');
@@ -18,6 +19,7 @@
   };
   let toastTimeout;
   let timer = { duration:240, remaining:240, deadline:null, running:false, preset:0 };
+  let prepTimer = {remaining:60,deadline:null,running:false};
   const theme = () => DATA.themes.find(t => t.id === state.theme);
   const part = () => DATA.parts.find(p => p.id === state.part);
   const questionCount = () => state.part === 'p2' ? 1 : theme()[state.part].length;
@@ -27,11 +29,16 @@
     return Number.isInteger(n) && n >= 0 && n < questionCount() ? n : 0;
   };
   const taskKey = () => `${indexKey()}-${questionIndex()}`;
+  function sectionsForTask(key=taskKey()) {
+    const [themeId,partId,index]=key.split('-');
+    return PLAN.sections(partId,DATA.themes.find(t=>t.id===themeId)||theme(),Number(index)||0);
+  }
   function taskData(key = taskKey()) {
     let task = state.tasks[key];
     if (!task || typeof task !== 'object' || Array.isArray(task)) task = {};
     const result = {
       notes: typeof task.notes === 'string' ? task.notes.slice(0,15000) : '',
+      planner: PLAN.normalize(task.planner,sectionsForTask(key),typeof task.notes==='string'?task.notes:''),
       next: typeof task.next === 'string' ? task.next.slice(0,2000) : '',
       checks: Array.from({length:5}, (_,i) => Array.isArray(task.checks) && task.checks[i] === true),
       done: task.done === true
@@ -82,10 +89,11 @@
       $('question-navigation').innerHTML = `<div class="question-navigation"><div class="question-dots" aria-label="Choose a question">${t[state.part].map((q,j)=>`<button class="question-dot ${j===i?'active':''} ${taskData(`${indexKey()}-${j}`).done?'done':''}" data-question="${j}" aria-label="Question ${j+1}${taskData(`${indexKey()}-${j}`).done?', practised':''}" ${j===i?'aria-current="true"':''}>${j+1}</button>`).join('')}</div><div class="question-arrows"><button class="icon-button" id="previous-question" aria-label="Previous question" ${i===0?'disabled':''}>←</button><button class="icon-button" id="next-question" aria-label="Next question" ${i===count-1?'disabled':''}>→</button></div></div><details class="all-questions"><summary>See all ${count} questions in this set</summary><ol>${t[state.part].map((q,j)=>`<li><button data-question="${j}">${escape(q[1])}</button></li>`).join('')}</ol></details>`;
     }
     const task = taskData();
-    $('student-notes').value = task.notes;
     $('next-step').value = task.next;
+    $('next-step').setAttribute('aria-invalid','false');
+    $('next-step-feedback').textContent='Keep your next goal to four words.';
     $('practice-help').textContent = p.help;
-    updateWordCount();
+    renderPlanner();
     renderChecklist();
     const partPosition = DATA.parts.findIndex(x => x.id === state.part);
     const next = DATA.parts[partPosition+1];
@@ -102,6 +110,10 @@
     $('complete-button').setAttribute('aria-pressed',String(task.done));
   }
   function renderResources() {
+    const plan=taskData().planner;
+    const groups=sectionsForTask();
+    const active=groups.find(g=>g.id===plan.active)||groups[0];
+    const target=`<label class="resource-target" for="planner-target">Add language to<select id="planner-target">${groups.map(g=>`<option value="${g.id}" ${g.id===active.id?'selected':''}>${escape(g.label)}</option>`).join('')}</select></label>`;
     const isWords = state.resource === 'words';
     ['words','phrases'].forEach(name => {
       $(name+'-tab').setAttribute('aria-selected',String(name === state.resource));
@@ -109,10 +121,10 @@
     });
     $('resource-content').setAttribute('aria-labelledby', state.resource+'-tab');
     if (isWords) {
-      $('resource-content').innerHTML = `<p class="resource-intro">${escape(theme().name)} · Part ${state.part.slice(1)}<br>Open a word to see its meaning and an example.</p>${theme().words[state.part].map((w,i)=>`<details class="word-item"><summary>${escape(w[0])}</summary><div class="word-detail"><p>${escape(w[1])}</p><p class="word-example">“${escape(w[2])}”</p><button class="text-button" data-add-word="${i}">Add to my notes <span aria-hidden="true">＋</span></button></div></details>`).join('')}`;
+      $('resource-content').innerHTML = `${target}<p class="resource-intro">${escape(theme().name)} · Part ${state.part.slice(1)}<br>Open a word to see its meaning and an example.</p>${theme().words[state.part].map((w,i)=>`<details class="word-item"><summary>${escape(w[0])}</summary><div class="word-detail"><p>${escape(w[1])}</p><p class="word-example">“${escape(w[2])}”</p><button class="text-button" data-add-word="${i}">Add to ${escape(active.label)} <span aria-hidden="true">＋</span></button></div></details>`).join('')}`;
     } else {
-      const phrases = [...DATA.phrases[state.part],['Connect to this theme',theme().starter[state.part]]];
-      $('resource-content').innerHTML = `<p class="resource-intro">Try a phrase, then complete it with your own idea.</p>${phrases.map((p,i)=>`<div class="phrase-item"><div class="phrase-label">${escape(p[0])}</div><p class="phrase-text">${escape(p[1])}</p><button class="text-button" data-add-phrase="${i}">Add to my notes <span aria-hidden="true">＋</span></button></div>`).join('')}`;
+      const phrases = [...DATA.phrases[state.part],['Connect to this theme',theme().plannerStarter[state.part]]];
+      $('resource-content').innerHTML = `${target}<p class="resource-intro">Short starters only. Build the full sentences aloud.</p>${phrases.map((p,i)=>`<div class="phrase-item"><div class="phrase-label">${escape(p[0])}</div><p class="phrase-text">${escape(p[1])}</p><button class="text-button" data-add-phrase="${i}">Add to ${escape(active.label)} <span aria-hidden="true">＋</span></button></div>`).join('')}`;
     }
   }
   function render() {
@@ -130,12 +142,68 @@
     document.title = `${theme().name} · Part ${state.part.slice(1)} | Speaking Studio`;
     renderNav(); renderTask(); renderResources(); renderPresets(); renderClock(); save();
   }
-  function updateWordCount() {
-    const count = $('student-notes').value.trim().split(/\s+/).filter(Boolean).length;
-    $('notes-count').textContent = `${count} ${count===1?'word':'words'}`;
+  function renderPlanner() {
+    const task=taskData(),plan=task.planner,groups=sectionsForTask();
+    const ready=PLAN.ready(plan),keywordCount=PLAN.countWords(plan);
+    $('planner-builder').hidden=ready;
+    $('response-stage').hidden=!ready;
+    $('preparation-tools').hidden=state.part!=='p2';
+    $('legacy-notes-message').hidden=!task.notes;
+    $('step-words').classList.toggle('active',!ready);
+    $('step-layout').classList.toggle('active',!ready&&keywordCount>0);
+    $('step-speak').classList.toggle('active',ready);
+    $('plan-count').textContent=`${keywordCount} target ${keywordCount===1?'entry':'entries'} · 4 words maximum per entry`;
+    $('planner-section-tabs').innerHTML=groups.map((g,i)=>`<button class="plan-section-tab tone-${i}" role="tab" data-plan-section="${g.id}" id="plan-tab-${g.id}" aria-controls="planner-editor" aria-selected="${g.id===plan.active}" tabindex="${g.id===plan.active?0:-1}">${escape(g.label)} <span>${plan.groups[g.id].length}</span></button>`).join('');
+    const active=groups.find(g=>g.id===plan.active)||groups[0];
+    const tone=groups.indexOf(active);
+    $('planner-editor').setAttribute('aria-labelledby',`plan-tab-${active.id}`);
+    $('planner-editor').innerHTML=`<div class="plan-editor-panel tone-${tone}"><div class="plan-editor-heading"><div><h4>${escape(active.label)}</h4><p>${escape(active.hint)}</p></div><span class="four-word-badge">4 WORDS MAX</span></div><span class="plan-mini-label">CHOOSE AN EXPRESSION</span><div class="expression-options">${active.expressions.map((text,i)=>`<button class="expression-option ${plan.groups[active.id].some(item=>item.text===text)?'chosen':''}" data-plan-expression="${i}" aria-pressed="${plan.groups[active.id].some(item=>item.text===text)}">${escape(text)} <span aria-hidden="true">＋</span></button>`).join('')}</div><span class="plan-mini-label">YOUR WORDS & EXPRESSIONS</span><div class="selected-entries">${plan.groups[active.id].length?plan.groups[active.id].map((item,i)=>`<span class="plan-chip ${item.kind==='expression'?'expression-chip':'word-chip'}">${escape(item.text)}<button data-remove-entry="${i}" aria-label="Remove ${escape(item.text)} from ${escape(active.label)}">×</button></span>`).join(''):'<p class="empty-entries">Choose a starter, then add your own target words.</p>'}</div><form id="planner-entry-form" novalidate><label for="planner-entry">Add a keyword or short expression</label><div class="planner-entry-row"><input id="planner-entry" type="text" autocomplete="off" maxlength="100" placeholder="e.g. quiet neighbourhood" aria-describedby="entry-feedback" aria-invalid="false"><button class="primary-button" id="add-plan-entry" type="submit" disabled>Add <span aria-hidden="true">＋</span></button></div><div id="entry-feedback" class="entry-feedback" role="status">0 / 4 words · Enter adds your entry.</div></form></div>`;
+    $('layout-help').textContent=keywordCount?'Your words are saved. Choose how to organise them.':'Add at least one target word, then choose a layout.';
+    document.querySelectorAll('[data-layout]').forEach(button=>{
+      button.disabled=!keywordCount;
+      button.setAttribute('aria-pressed',String(plan.mode===button.dataset.layout));
+    });
+    if(ready){
+      const prompt=state.part==='p2'?theme().p2.title:theme()[state.part][questionIndex()][1];
+      const cards=groups.map((g,i)=>`<section class="plan-branch tone-${i}" data-branch="${i}"><h5><span>${i+1}</span>${escape(g.label)}</h5><div class="branch-entries">${plan.groups[g.id].length?[...plan.groups[g.id]].sort((a,b)=>(a.kind==='expression'?0:1)-(b.kind==='expression'?0:1)).map(item=>`<span class="display-chip ${item.kind==='expression'?'display-expression':''}">${escape(item.text)}</span>`).join(''):'<span class="empty-branch">Optional · no entries yet</span>'}</div></section>`).join('');
+      $('plan-display').innerHTML=plan.mode==='spidergram'?`<div class="spidergram branches-${groups.length}"><svg class="spider-lines" aria-hidden="true"></svg><div class="plan-hub"><span>MY RESPONSE</span><strong>${escape(prompt)}</strong></div>${cards}</div>`:`<div class="listing-plan"><p class="list-task">${escape(prompt)}</p>${cards}</div>`;
+      if(plan.mode==='spidergram'&&typeof requestAnimationFrame==='function')requestAnimationFrame(drawSpidergram);
+    }else $('plan-display').innerHTML='';
+    renderPrepClock();renderClock();
+  }
+  function drawSpidergram() {
+    const container=document.querySelector('#plan-display .spidergram');
+    if(!container||!container.querySelectorAll)return;
+    const svg=container.querySelector('svg'),hub=container.querySelector('.plan-hub');
+    if(!svg||!hub)return;
+    const bounds=container.getBoundingClientRect(),center=hub.getBoundingClientRect();
+    const cx=center.left+center.width/2-bounds.left,cy=center.top+center.height/2-bounds.top;
+    svg.setAttribute('viewBox',`0 0 ${bounds.width} ${bounds.height}`);
+    svg.innerHTML=Array.from(container.querySelectorAll('.plan-branch')).map((node,i)=>{
+      const r=node.getBoundingClientRect(),x=r.left+r.width/2-bounds.left,y=(r.top>center.top?r.top:r.bottom)-bounds.top;
+      return `<path d="M ${cx} ${cy} Q ${cx} ${(cy+y)/2} ${x} ${y}" class="connector-${i}"/>`;
+    }).join('');
+  }
+  function updateEntryFeedback() {
+    const input=$('planner-entry'),v=PLAN.validate(input.value);
+    $('entry-feedback').textContent=v.count>4?v.error:`${v.count} / 4 words · Enter adds your entry.`;
+    $('entry-feedback').classList.toggle('entry-error',v.count>4);
+    input.setAttribute('aria-invalid',String(v.count>4));
+    $('add-plan-entry').disabled=!v.ok;
+  }
+  function addToPlan(text,kind='word') {
+    const task=taskData(),result=PLAN.add(task.planner,task.planner.active,text,kind);
+    if(!result.ok){toast(result.error);return false;}
+    save();renderPlanner();renderResources();
+    toast(`Added to ${sectionsForTask().find(g=>g.id===task.planner.active).label}.`);
+    return true;
+  }
+  function pauseResponse() {
+    syncTimer();timer.running=false;timer.deadline=null;renderClock();
   }
   function goQuestion(i) {
-    if (!Number.isInteger(i) || i<0 || i>=questionCount()) return;
+    if (!Number.isInteger(i) || i<0 || i>=questionCount() || i===questionIndex()) return;
+    pauseResponse();resetPrepClock();
     state.indices[indexKey()] = i;
     renderTask(); save();
     $('task-title').focus({preventScroll:true});
@@ -144,15 +212,17 @@
     if (id === state.part || !DATA.parts.some(p => p.id === id)) return;
     const wasRunning = timer.running;
     state.part = id;
+    resetPrepClock();
     resetTimer(0);
     render();
-    $('part-heading').scrollIntoView({behavior:'smooth',block:'start'});
+    $('part-heading').scrollIntoView({behavior:'auto',block:'start'});
     $('task-title').focus({preventScroll:true});
     if (wasRunning) toast('New part, fresh clock. Your notes are saved.');
   }
   function switchTheme(id) {
     if (!DATA.themes.some(t => t.id === id)) return;
     state.theme = id;
+    resetPrepClock();
     resetTimer(0); render();
     $('theme-dialog').close();
     toast(`Ready to talk about ${theme().name.toLowerCase()}?`);
@@ -179,26 +249,41 @@
     $('clock').classList.toggle('finished',timer.remaining===0);
     $('timer-start').innerHTML = timer.running ? '<span aria-hidden="true">Ⅱ</span> Pause clock' : timer.remaining === 0 ? '<span aria-hidden="true">↺</span> Start again' : timer.remaining < timer.duration ? '<span aria-hidden="true">▶</span> Resume clock' : '<span aria-hidden="true">▶</span> Start clock';
     $('timer-start').setAttribute('aria-pressed',String(timer.running));
+    $('timer-start').disabled=!PLAN.ready(taskData().planner);
     $('timer-progress').style.width = `${100*(timer.duration-timer.remaining)/timer.duration}%`;
-    const message = timer.remaining===0 ? (state.part==='p2' && timer.preset===0 ? 'Preparation finished. Select “Speak · 2 min”, then start the clock yourself.' : 'Time is up. Finish your answer, then use the checklist below.') : timer.running ? (state.part==='p2' ? (timer.preset===0?'Preparation time. Make keyword notes.':'Speaking time. Tell your story aloud.') : 'Speaking time. Move through the questions at your own pace.') : timer.remaining<timer.duration ? 'Paused. Take a breath, then continue.' : 'Ready when you are.';
+    const message = !PLAN.ready(taskData().planner)?'Add target words and choose a layout before speaking.':timer.remaining===0?'Time is up. Finish your answer, then use the checklist below.':timer.running?'Speaking time. Follow your keywords and make sentences aloud.':timer.remaining<timer.duration?'Paused. Take a breath, then continue.':'Your plan is ready. Start the clock when you are.';
     if ($('timer-message').textContent !== message) $('timer-message').textContent = message;
   }
   function toggleTimer() {
+    if(!PLAN.ready(taskData().planner)){toast('Add target words, then choose Spidergram or Listing first.');return;}
     syncTimer();
     if (timer.running) { timer.running = false; timer.deadline = null; }
     else { if (timer.remaining===0) timer.remaining=timer.duration; timer.deadline = Date.now()+timer.remaining*1000; timer.running = true; }
     renderClock();
   }
-  setInterval(() => { if (timer.running) { syncTimer(); renderClock(); } },200);
-  document.addEventListener('visibilitychange', () => { syncTimer(); renderClock(); });
-  function addToNotes(text) {
-    const field = $('student-notes');
-    const next = field.value + (field.value.trim()?'\n':'') + text;
-    if (next.length > field.maxLength) { toast('Your notes are full. Export a copy before adding more.'); return; }
-    field.value = next;
-    const task = taskData(); task.notes = next; save(); updateWordCount();
-    toast('Added to your notes. Make it your own.');
+  function syncPrepClock() {
+    if(!prepTimer.running)return;
+    prepTimer.remaining=Math.max(0,Math.ceil((prepTimer.deadline-Date.now())/1000));
+    if(!prepTimer.remaining){prepTimer.running=false;prepTimer.deadline=null;}
   }
+  function renderPrepClock() {
+    const min=Math.floor(prepTimer.remaining/60),sec=prepTimer.remaining%60;
+    $('prep-clock').textContent=`${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+    $('prep-clock').setAttribute('aria-label',`${min} minutes ${sec} seconds of preparation remaining`);
+    $('prep-start').textContent=prepTimer.running?'Pause preparation':prepTimer.remaining===0?'Restart preparation':prepTimer.remaining<60?'Resume preparation':'Start preparation';
+    const message=prepTimer.remaining===0?'Preparation finished. Choose your layout, then start speaking yourself.':prepTimer.running?'Planning time. Collect keywords; four words per entry.':prepTimer.remaining<60?'Preparation paused.':'Start this optional clock when you begin planning.';
+    if($('prep-status').textContent!==message)$('prep-status').textContent=message;
+  }
+  function resetPrepClock() {prepTimer={remaining:60,deadline:null,running:false};renderPrepClock();}
+  function togglePrepClock() {
+    if(state.part!=='p2')return;
+    syncPrepClock();
+    if(prepTimer.running){prepTimer.running=false;prepTimer.deadline=null;}
+    else{if(!prepTimer.remaining)prepTimer.remaining=60;prepTimer.deadline=Date.now()+prepTimer.remaining*1000;prepTimer.running=true;}
+    renderPrepClock();
+  }
+  setInterval(() => {if(timer.running){syncTimer();renderClock();}if(prepTimer.running){syncPrepClock();renderPrepClock();}},200);
+  document.addEventListener('visibilitychange',()=>{syncTimer();renderClock();syncPrepClock();renderPrepClock();});
   function openThemes() {
     $('theme-options').innerHTML = DATA.themes.map(t=>`<button class="theme-option ${t.id===state.theme?'selected':''}" data-theme="${t.id}" aria-pressed="${t.id===state.theme}"><span class="theme-emoji" style="background:${t.color}" aria-hidden="true">${t.icon}</span>${t.id===state.theme?'<span class="theme-selected">✓ Current theme</span>':''}<strong>${escape(t.name)}</strong><small>${escape(t.subtitle)}</small></button>`).join('');
     $('theme-dialog').showModal();
@@ -206,7 +291,7 @@
   function showGuide(type) {
     if (type === 'how') {
       $('info-title').textContent = 'A practice routine that works for you.';
-      $('info-content').innerHTML = `<p>Choose one of six contexts and carry it through all three parts. Work alone, with a partner or with your teacher.</p><ol><li><strong>Read the task.</strong> Think of a real experience or a position you can explain. Use the hints if you need a starting point.</li><li><strong>Find your language.</strong> Open the word bank for meanings and examples, or try a guiding phrase. Add useful language to your notes.</li><li><strong>Practise aloud.</strong> The clocks start only when you press Start. Pause, resume or reset whenever you need. Part 1 and Part 3 clocks cover the whole question set.</li><li><strong>For Part 2, prepare then speak.</strong> Start the one-minute preparation clock. When it finishes, select the two-minute speaking clock and start it manually. Try the brief follow-up questions afterwards.</li><li><strong>Reflect and repeat.</strong> Tick what you noticed, write one next step and mark the task as practised. This records your practice, not a score.</li></ol><div class="band-note">Notes and language support are training aids. In the real test, preparation notes are provided for Part 2. Our theme-linked Part 1 sets are designed for practice; the actual interview covers a range of familiar topics. The real Speaking test takes 11–14 minutes.</div><h3>Your work, on your device</h3><p>Notes, checklists and practice markers are saved in this browser, separately for every theme and task. They do not sync between devices. Export your theme practice to keep a text copy. Running clocks reset when you change part or theme, or reload the page; moving between questions in the same set keeps the clock going.</p><div class="source-links"><a href="https://ielts.org/take-a-test/test-types/ielts-academic-test/ielts-academic-format-speaking" target="_blank" rel="noopener noreferrer">Official test format ↗</a></div>`;
+      $('info-content').innerHTML = `<p>Choose a context and carry it through all three parts. Work alone, with a partner or with your teacher.</p><ol><li><strong>Read the task.</strong> Think of a real experience or a position you can explain.</li><li><strong>Collect words.</strong> Choose a task-specific section such as Reason or Example. Select short expression starters, add words from the right-hand bank, or enter your own. Every entry has a strict four-word limit, including pasted text.</li><li><strong>Choose your layout.</strong> After adding at least one target word, choose Spidergram or Listing. Your selected expressions and keywords become a speaking plan. You can switch layouts or edit your words any time.</li><li><strong>Speak from the plan.</strong> The response clock appears with your plan. Start it yourself and build full sentences aloud. Editing or moving to another task pauses the response clock.</li><li><strong>For Part 2, prepare then speak.</strong> Use the optional one-minute preparation clock while collecting words. Choose a layout, then manually start the two-minute response clock. The clocks never start each other.</li><li><strong>Reflect and repeat.</strong> Use the checklist and write one next step. Marking a task as practised does not award a score.</li></ol><div class="band-note">Planning support is a training aid. The real test provides preparation notes for Part 2. Our theme-linked Part 1 sets are learning activities; the actual interview covers a range of familiar topics. The real Speaking test takes 11–14 minutes.</div><h3>Your work, on your device</h3><p>Each task’s words, chosen layout, checklists and practice markers are saved in this browser. They do not sync between devices. Export your theme practice to keep a copy. Original notes from the earlier version are retained in your export and imported as short entries. Clocks reset on reload or a change of part/theme.</p><div class="source-links"><a href="https://ielts.org/take-a-test/test-types/ielts-academic-test/ielts-academic-format-speaking" target="_blank" rel="noopener noreferrer">Official test format ↗</a></div>`;
     } else {
       $('info-title').textContent = 'What makes effective speaking?';
       $('info-content').innerHTML = `<p>IELTS assesses four areas across the whole Speaking test. Use them to reflect on your practice. A ticked checklist does not predict a band score.</p><div class="guide-grid"><div class="guide-box"><h3>Fluency & coherence</h3><p>Keep speaking, develop relevant ideas and connect them in a way the listener can follow. Pauses to think are natural.</p></div><div class="guide-box"><h3>Lexical resource</h3><p>Choose vocabulary that communicates your meaning accurately. Explain an idea another way when the word you want is missing.</p></div><div class="guide-box"><h3>Grammatical range & accuracy</h3><p>Use both simple and complex sentence forms where appropriate, with control of grammar and tense.</p></div><div class="guide-box"><h3>Pronunciation</h3><p>Make yourself easy to understand through clear sounds, rhythm, stress and intonation. You do not need to imitate a particular accent.</p></div></div><h3>Useful development goals</h3><p><strong>Towards band 6:</strong> sustain longer answers, paraphrase when needed, combine short and complex forms, and make your meaning generally clear.</p><p><strong>Towards band 7:</strong> develop longer turns with connected ideas, use vocabulary flexibly, produce frequent accurate sentences, and improve control of your delivery.</p><p><strong>Towards band 8:</strong> develop ideas coherently, choose precise vocabulary, make most sentences accurate, and use stress and intonation flexibly.</p><div class="band-note">These are condensed learning goals based on the supplied public descriptors. They are not a complete scoring rubric. Qualified IELTS examiners assess performance across the test; this site provides no automated band scores.</div><div class="source-links"><a href="./ielts-speaking-band-descriptors.pdf" target="_blank" rel="noopener">Read the full band descriptors (PDF) ↗</a><a href="https://ielts.org/take-a-test/test-types/ielts-academic-test/ielts-academic-format-speaking" target="_blank" rel="noopener noreferrer">Official test format ↗</a></div>`;
@@ -221,7 +306,14 @@
       const prompts = p.id==='p2' ? [[t.p2.title, ...t.p2.bullets,t.p2.end].join('\n')] : t[p.id].map(q=>q[1]);
       prompts.forEach((prompt,i)=>{
         const task = taskData(`${t.id}-${p.id}-${i}`);
-        lines.push(`Task ${i+1}: ${prompt}`,`Practice status: ${task.done?'Practised':'Not marked as practised'}`,'','MY NOTES',task.notes||'(No notes yet)','','MY CHECKLIST');
+        lines.push(`Task ${i+1}: ${prompt}`,`Practice status: ${task.done?'Practised':'Not marked as practised'}`,`Note-taking layout: ${task.planner.mode||'Not chosen yet'}`,'','MY SPEAKING PLAN');
+        for(const group of sectionsForTask(`${t.id}-${p.id}-${i}`)){
+          lines.push(group.label.toUpperCase());
+          const entries=task.planner.groups[group.id];
+          lines.push(...(entries.length?entries.map(item=>`- ${item.text}${item.kind==='expression'?' (starter)':''}`):['(No entries yet)']),'');
+        }
+        if(task.notes)lines.push('ORIGINAL NOTES FROM EARLIER VERSION',task.notes,'');
+        lines.push('MY CHECKLIST');
         DATA.checks[p.id].forEach((c,j)=>lines.push(`${task.checks[j]?'[x]':'[ ]'} ${c[0]} ${c[1]}`));
         lines.push('','MY NEXT STEP',task.next||'(No next step yet)','','------------------------------','');
       });
@@ -241,10 +333,18 @@
     if (target.dataset.theme) switchTheme(target.dataset.theme);
     if (target.dataset.preset!==undefined) { resetTimer(Number(target.dataset.preset)); }
     if (target.dataset.resource) { state.resource = target.dataset.resource; renderResources(); }
-    if (target.dataset.addWord!==undefined) addToNotes(theme().words[state.part][Number(target.dataset.addWord)][0]);
+    if (target.dataset.planSection) {const task=taskData();task.planner.active=target.dataset.planSection;save();renderPlanner();renderResources();}
+    if (target.dataset.planExpression!==undefined) {
+      const task=taskData(),group=sectionsForTask().find(g=>g.id===task.planner.active),text=group.expressions[Number(target.dataset.planExpression)];
+      const existing=task.planner.groups[group.id].findIndex(item=>item.text===text);
+      if(existing>=0){PLAN.remove(task.planner,group.id,existing);save();renderPlanner();renderResources();}else addToPlan(text,'expression');
+    }
+    if (target.dataset.removeEntry!==undefined){const task=taskData();PLAN.remove(task.planner,task.planner.active,Number(target.dataset.removeEntry));save();renderPlanner();renderResources();}
+    if (target.dataset.layout){const task=taskData();if(PLAN.chooseMode(task.planner,target.dataset.layout)){syncPrepClock();prepTimer.running=false;prepTimer.deadline=null;save();renderPlanner();$('response-stage').scrollIntoView({behavior:'auto',block:'start'});$('plan-ready-title').focus({preventScroll:true});}else toast('Add at least one target word before choosing a layout.');}
+    if (target.dataset.addWord!==undefined) addToPlan(theme().words[state.part][Number(target.dataset.addWord)][0]);
     if (target.dataset.addPhrase!==undefined) {
-      const phrases=[...DATA.phrases[state.part],['Connect to this theme',theme().starter[state.part]]];
-      addToNotes(phrases[Number(target.dataset.addPhrase)][1]);
+      const phrases=[...DATA.phrases[state.part],['Connect to this theme',theme().plannerStarter[state.part]]];
+      addToPlan(phrases[Number(target.dataset.addPhrase)][1],'expression');
     }
     if (target.classList.contains('dialog-close')) target.closest('dialog').close();
     switch(target.id) {
@@ -255,6 +355,9 @@
       case 'assessment-button': case 'criteria-link': showGuide('assessment'); break;
       case 'timer-start': toggleTimer(); break;
       case 'timer-reset': resetTimer(); break;
+      case 'prep-start': togglePrepClock(); break;
+      case 'prep-reset': resetPrepClock(); break;
+      case 'edit-plan': {pauseResponse();const task=taskData();task.planner.editing=true;save();renderPlanner();$('planner-builder').scrollIntoView({behavior:'auto',block:'start'});break;}
       case 'download-button': exportPractice(); break;
       case 'complete-button': {
         const task = taskData(); task.done = !task.done; save(); renderNav(); renderTask();
@@ -262,8 +365,25 @@
       }
     }
   });
-  $('student-notes').addEventListener('input',()=>{ const task=taskData();task.notes=$('student-notes').value;save();updateWordCount(); });
-  $('next-step').addEventListener('input',()=>{const task=taskData();task.next=$('next-step').value;save();});
+  document.addEventListener('submit',event=>{
+    if(event.target.id!=='planner-entry-form')return;
+    event.preventDefault();
+    const value=$('planner-entry').value;
+    if(addToPlan(value)){$('planner-entry').focus();updateEntryFeedback();}else updateEntryFeedback();
+  });
+  document.addEventListener('input',event=>{if(event.target.id==='planner-entry')updateEntryFeedback();});
+  document.addEventListener('change',event=>{
+    if(event.target.id!=='planner-target')return;
+    const task=taskData();if(!sectionsForTask().some(g=>g.id===event.target.value))return;
+    task.planner.active=event.target.value;save();renderPlanner();renderResources();
+  });
+  $('next-step').addEventListener('input',()=>{
+    const field=$('next-step'),v=PLAN.validate(field.value),valid=v.ok||!v.count;
+    field.setAttribute('aria-invalid',String(!valid));
+    $('next-step-feedback').textContent=valid?'Keep your next goal to four words.':v.error;
+    $('next-step-feedback').classList.toggle('entry-error',!valid);
+    if(valid){const task=taskData();task.next=v.text;save();}
+  });
   $('checklist').addEventListener('change',event=>{
     if(event.target.dataset.check===undefined) return;
     const task=taskData();task.checks[Number(event.target.dataset.check)] = event.target.checked;
@@ -273,10 +393,17 @@
     if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
     event.preventDefault();state.resource=event.key==='Home'?'words':event.key==='End'?'phrases':state.resource==='words'?'phrases':'words';renderResources();$(state.resource+'-tab').focus();
   });
+  $('planner-section-tabs').addEventListener('keydown',event=>{
+    if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+    event.preventDefault();const task=taskData(),groups=sectionsForTask(),index=groups.findIndex(g=>g.id===task.planner.active);
+    const next=event.key==='Home'?0:event.key==='End'?groups.length-1:(index+(event.key==='ArrowRight'?1:-1)+groups.length)%groups.length;
+    task.planner.active=groups[next].id;save();renderPlanner();renderResources();$(`plan-tab-${groups[next].id}`).focus();
+  });
   document.querySelectorAll('dialog').forEach(dialog=>dialog.addEventListener('click',event=>{
     if(event.target!==dialog) return;
     const r=dialog.getBoundingClientRect();
     if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom) dialog.close();
   }));
+  if(typeof ResizeObserver==='function')new ResizeObserver(drawSpidergram).observe($('plan-display'));
   resetTimer(0); render();
 })();
