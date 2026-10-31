@@ -5,7 +5,7 @@ import vm from 'node:vm';
 const content = fs.readFileSync(new URL('../dist/content.js', import.meta.url),'utf8');
 const planner = fs.readFileSync(new URL('../dist/planner.js', import.meta.url),'utf8');
 const app = fs.readFileSync(new URL('../dist/app.js', import.meta.url),'utf8');
-function boot(initial='{}', storageFails=false) {
+function boot(initial='{}', storageFails=false, reducedMotion=false) {
   let now=100000, stored=initial;
   const elements=new Map(), handlers=new Map(), intervals=[];
   function element(id) {
@@ -19,7 +19,7 @@ function boot(initial='{}', storageFails=false) {
     };elements.set(id,e);return e;
   }
   const document={getElementById:element,querySelector:element,querySelectorAll:()=>[],addEventListener:(k,v)=>handlers.set(k,v)};
-  const context={window:{},document,localStorage:{getItem:()=>{if(storageFails)throw Error('Unavailable');return stored;},setItem:(_,v)=>{if(storageFails)throw Error('Quota exceeded');stored=v;}},Date:class extends Date{static now(){return now;}},setInterval:fn=>intervals.push(fn),setTimeout:()=>0,clearTimeout:()=>{},Blob,URL};
+  const context={window:{},document,matchMedia:()=>({matches:reducedMotion,addEventListener(){}}),localStorage:{getItem:()=>{if(storageFails)throw Error('Unavailable');return stored;},setItem:(_,v)=>{if(storageFails)throw Error('Quota exceeded');stored=v;}},Date:class extends Date{static now(){return now;}},setInterval:fn=>intervals.push(fn),setTimeout:()=>0,clearTimeout:()=>{},Blob,URL};
   vm.createContext(context);vm.runInContext(content,context);vm.runInContext(planner,context);vm.runInContext(app,context);
   return {model:context.window.STUDIO_PLANNER,data:context.window.STUDIO,element,stored:()=>JSON.parse(stored),advance(ms){now+=ms;intervals.forEach(fn=>fn());},click(id,dataset={}){const e=element(id);e.dataset=dataset;handlers.get('click')({target:e});},input(id,value){const e=element(id);e.value=value;e.fire('input');handlers.get('input')?.({target:e});},submit(value){element('planner-entry').value=value;handlers.get('submit')({target:element('planner-entry-form'),preventDefault(){}});},change(id,value){const e=element(id);e.value=value;handlers.get('change')?.({target:e});}};
 }
@@ -66,60 +66,97 @@ const malformedPlan=P.normalize({mode:'html',active:'missing',groups:{opinion:[{
 assert.equal(malformedPlan.mode,null);assert.equal(malformedPlan.active,'opinion');
 assert.equal(malformedPlan.groups.opinion.length,1,'Overlong stored entries are rejected');
 
-// The speaking clock is unavailable until words and a layout are chosen.
+// Exactly one stage is visible, and later work cannot be skipped into.
+const panelIds=['question-stage','planner-builder','layout-stage','response-stage','review-stage'];
+function stage(app,expected){
+  assert.deepEqual(panelIds.filter(id=>!app.element(id).hidden),[expected]);
+}
+function plan(app,word,layout='list'){
+  app.click('begin-planning');app.submit(word);app.click('choose-style');app.click('layout',{layout});
+}
+stage(site,'question-stage');
 site.click('timer-start');site.advance(4000);assert.equal(site.element('clock').textContent,'04:00');
-site.click('layout',{layout:'list'});assert.equal(site.element('response-stage').hidden,true);
+site.click('layout',{layout:'list'});site.click('finish-response');site.click('complete-button');
+stage(site,'question-stage');assert.equal(site.stored().tasks['home-p1-0'].done,false);
+site.click('begin-planning');stage(site,'planner-builder');
+site.click('choose-style');stage(site,'planner-builder');
 site.submit('This is five words here');
 assert.equal(site.stored().tasks['home-p1-0'].planner.groups.opinion.length,0);
 assert.match(site.element('toast').textContent,/Four words maximum/);
-site.submit('quiet park');site.click('layout',{layout:'spidergram'});
-assert.equal(site.element('response-stage').hidden,false);
+site.click('expression',{planExpression:'0'});site.click('choose-style');stage(site,'planner-builder');
+site.submit('quiet park');site.click('choose-style');stage(site,'layout-stage');
+site.click('layout',{layout:'spidergram'});stage(site,'response-stage');
 assert.match(site.element('plan-display').innerHTML,/spidergram/);
+site.click('finish-response');stage(site,'response-stage');
 site.click('timer-start');site.advance(4300);assert.equal(site.element('clock').textContent,'03:56');
-site.click('edit-plan');site.advance(10000);assert.equal(site.element('clock').textContent,'03:56','Editing pauses the response clock');
+site.click('edit-plan');stage(site,'planner-builder');
+site.advance(10000);assert.equal(site.element('clock').textContent,'03:56','Editing pauses the clock');
 site.click('section',{planSection:'reason'});site.submit('fresh air');
 site.change('planner-target','example');site.click('word',{addWord:'0'});
 assert.equal(site.stored().tasks['home-p1-0'].planner.groups.example[0].text,'within walking distance');
-site.click('layout',{layout:'list'});assert.match(site.element('plan-display').innerHTML,/listing-plan/);
+site.click('choose-style');site.click('layout',{layout:'list'});
+assert.match(site.element('plan-display').innerHTML,/listing-plan/);
+site.click('timer-start');site.advance(1000);site.click('finish-response');stage(site,'review-stage');
+site.advance(10000);assert.equal(site.element('clock').textContent,'03:55','Finishing stops the clock');
 site.input('next-step','Use clearer examples');
 site.input('next-step','This new goal is too long');
 assert.equal(site.stored().tasks['home-p1-0'].next,'Use clearer examples');
 const check={dataset:{check:'2'},checked:true};site.element('checklist').fire('change',{target:check});
-site.click('complete-button');
-const restored=boot(JSON.stringify(site.stored()));
+site.click('complete-button');stage(site,'review-stage');
+const restored=boot(JSON.stringify(site.stored()));stage(restored,'review-stage');
 assert.equal(restored.stored().tasks['home-p1-0'].planner.mode,'list');
-assert.equal(restored.element('response-stage').hidden,false);
 assert.equal(restored.stored().tasks['home-p1-0'].checks[2],true);
 assert.equal(restored.stored().tasks['home-p1-0'].done,true);
+assert.equal(restored.element('next-task').hidden,false);
+site.click('motion-toggle');assert.equal(site.stored().motion,false);
+assert.ok(site.element('journey-card').classList.contains('motion-off'));
+const reduced=boot('{}',false,true);assert.ok(reduced.element('journey-card').classList.contains('motion-off'));
+assert.equal(reduced.element('motion-toggle').textContent,'✦ Reduced motion');
+const calm=boot(JSON.stringify(site.stored()));assert.ok(calm.element('journey-card').classList.contains('motion-off'));
 
-// Words, chosen layout and reflection stay independent for every task and theme.
-site.click('next-question');assert.equal(site.element('response-stage').hidden,true);
-site.submit('new buildings');site.click('layout',{layout:'list'});
-site.click('theme',{theme:'travel'});assert.equal(site.element('response-stage').hidden,true);
-site.submit('bus commute');
-site.click('theme',{theme:'home'});assert.equal(site.stored().tasks['home-p1-1'].planner.groups.opinion[0].text,'new buildings');
-site.click('question',{question:'0'});assert.match(site.element('plan-display').innerHTML,/quiet park/);
+// New questions start at the question, with separate words and a fresh clock.
+site.click('next-task');stage(site,'question-stage');assert.equal(site.element('clock').textContent,'04:00');
+plan(site,'new buildings');
+site.click('theme',{theme:'travel'});stage(site,'question-stage');
+site.click('begin-planning');site.submit('bus commute');
+site.click('theme',{theme:'home'});stage(site,'response-stage');
+assert.equal(site.stored().tasks['home-p1-1'].planner.groups.opinion[0].text,'new buildings');
+site.click('question',{question:'0'});stage(site,'review-stage');
+site.click('retry-response');stage(site,'response-stage');
+assert.match(site.element('plan-display').innerHTML,/quiet park/);
 site.click('timer-start');site.advance(5000);site.click('next-question');site.advance(20000);
-assert.equal(site.element('clock').textContent,'03:55','Question navigation pauses a running clock');
-site.click('timer-start');site.advance(235000);assert.equal(site.element('clock').textContent,'00:00');
+assert.equal(site.element('clock').textContent,'04:00','Question navigation stops and resets the clock');
+site.click('timer-start');site.advance(241000);assert.equal(site.element('clock').textContent,'00:00');
+stage(site,'review-stage');assert.match(site.element('review-success').textContent,/Time’s up/);
 
-// Part 2 preparation is independent: it cannot automatically start a response.
-site.click('part',{part:'p2'});assert.equal(site.element('clock').textContent,'02:00');
-assert.equal(site.element('preparation-tools').hidden,false);
-site.click('prep-start');site.advance(61000);assert.equal(site.element('prep-clock').textContent,'00:00');
-assert.equal(site.element('clock').textContent,'02:00');assert.equal(site.element('response-stage').hidden,true);
+// Part 2 preparation only belongs to planning; it never starts the response.
+site.click('part',{part:'p2'});stage(site,'question-stage');
+assert.equal(site.element('clock').textContent,'02:00');
+site.click('prep-start');site.advance(10000);assert.equal(site.element('prep-clock').textContent,'01:00');
+site.click('begin-planning');site.click('prep-start');site.advance(61000);
+assert.equal(site.element('prep-clock').textContent,'00:00');stage(site,'planner-builder');
+assert.equal(site.element('clock').textContent,'02:00');
 assert.match(site.element('prep-status').textContent,/Preparation finished/);
-site.submit('riverside park');site.click('layout',{layout:'spidergram'});site.advance(20000);
-assert.equal(site.element('clock').textContent,'02:00','Choosing a map never starts speaking automatically');
+site.submit('riverside park');site.click('choose-style');stage(site,'layout-stage');
+site.click('layout',{layout:'spidergram'});site.advance(20000);
+assert.equal(site.element('clock').textContent,'02:00','A layout never starts speaking automatically');
 assert.equal((site.element('plan-display').innerHTML.match(/data-branch=/g)||[]).length,5);
-site.click('timer-start');site.advance(121000);assert.equal(site.element('clock').textContent,'00:00');
-assert.match(site.element('timer-message').textContent,/Time is up/);
-site.click('timer-reset');assert.equal(site.element('clock').textContent,'02:00');
-site.click('part',{part:'p3'});assert.equal(site.element('preparation-tools').hidden,true);
+const speakingReload=boot(JSON.stringify(site.stored()));stage(speakingReload,'response-stage');
+assert.equal(speakingReload.element('finish-response').disabled,true,'After reload, start the new clock before finishing');
+site.click('timer-start');site.advance(121000);stage(site,'review-stage');
+assert.equal(site.element('clock').textContent,'00:00');
+site.click('retry-response');stage(site,'response-stage');assert.equal(site.element('clock').textContent,'02:00');
+site.click('part',{part:'p3'});stage(site,'question-stage');
+assert.equal(site.element('preparation-tools').hidden,true);
 assert.match(site.element('planner-section-tabs').innerHTML,/Balance/);
 
+// Returning to question and removing the last keyword keep the forward gate closed.
+const back=boot();back.click('begin-planning');back.submit('one keyword');back.click('back-question');
+stage(back,'question-stage');back.click('begin-planning');back.click('remove',{removeEntry:'0'});
+back.click('choose-style');stage(back,'planner-builder');
+
 // Student-entered markup is displayed as text, never inserted as an HTML element.
-const safe=boot();safe.submit('<img src=x>');safe.click('layout',{layout:'list'});
+const safe=boot();plan(safe,'<img src=x>');
 assert.match(safe.element('plan-display').innerHTML,/&lt;img/);
 assert.doesNotMatch(safe.element('plan-display').innerHTML,/<img/);
 
@@ -132,8 +169,8 @@ assert.equal(legacy.element('legacy-notes-message').hidden,false);
 
 // Bad or unavailable storage must never prevent planning from opening.
 const unavailable=boot('{}',true);assert.match(unavailable.element('save-status').textContent,/Not saved/);
-unavailable.submit('still works');assert.match(unavailable.element('planner-editor').innerHTML,/still works/);
+unavailable.click('begin-planning');unavailable.submit('still works');assert.match(unavailable.element('planner-editor').innerHTML,/still works/);
 const corrupt=boot('{bad json');assert.equal(corrupt.element('clock').textContent,'04:00');
 const malformed=boot(JSON.stringify({theme:'unknown',part:'p9',indices:[],tasks:[]}));
 assert.equal(malformed.element('theme-name').textContent,'Home & hometown');
-console.log('Passed: 78 tasks, 108 words, four-word limits, both plan layouts, task isolation, saved plans, gated speech clocks, independent preparation and storage recovery.');
+console.log('Passed: five exclusive stages, guarded progression, manual and automatic review, motion preference, 78 tasks, 108 words, four-word limits, both plan layouts, task isolation, saved plans, gated speech clocks, independent preparation and storage recovery.');

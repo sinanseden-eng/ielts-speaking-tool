@@ -7,9 +7,11 @@ A responsive, browser-based IELTS Speaking practice website. Six original theme 
 - 78 practice tasks: six Part 1 questions, one Part 2 cue card and six Part 3 questions per theme.
 - 108 contextual vocabulary entries, each with a definition and an original example.
 - Part-specific expression starters, all four words or fewer, and a contextual starter.
-- A guided keyword planner for every task: choose expressions, add target words in task-specific sections, then choose a spidergram or an ordered list. Every entry is limited to four words, including pasted text. Plans appear above the manually started response clock. Five reflection checks and a short next-step goal finish each task.
-- Manual start, pause, resume and reset clocks. Part 2 has an optional one-minute planning clock and a separate two-minute response clock. Neither clock starts the other. Part 1/3 offer four- and five-minute whole-set timers; moving to another question or editing a plan pauses the response clock.
-- Saved words, expressions, chosen note-taking layout and task progress in browser localStorage, isolated by theme, part and question.
+- Five separate screens in one task card: Question → Plan → Note style → Speak → Review. Only the active stage is shown. The student starts the clock manually; the checklist appears when time ends or they choose **I’ve finished**.
+- A guided keyword planner for every task: choose expressions, add target words in task-specific sections, then choose a spidergram or an ordered list. Every entry is limited to four words, including pasted text. All notes appear with a sticky, manually started response clock. Five reflection checks and a short next-step goal finish each task.
+- Manual start, pause, resume and reset clocks. Part 2 has an optional one-minute planning clock and a separate two-minute response clock. Neither clock starts the other. Part 1/3 retain selectable four- and five-minute practice limits; students can finish a response earlier. Each new task gets a fresh clock. Editing a plan pauses the response clock.
+- Colour sweeps, sparkle transitions, note pop-ins and gentle speaking animation. A persistent motion toggle and system reduced-motion support disable animations.
+- Saved words, expressions, chosen note-taking layout, active stage and task progress in browser localStorage, isolated by theme, part and question.
 - Text export of all practice in the selected theme, including grouped plan entries, expression starters, reflection and original notes from earlier versions.
 - Keyboard navigation, native modal dialogs, mobile layouts and reduced-motion support.
 - An assessment guide and the supplied public IELTS Speaking band descriptors.
@@ -22,7 +24,7 @@ No build, framework, account, API key or package installation is required. Serve
 python3 -m http.server 8080 --directory dist
 ```
 
-Visit `http://localhost:8080`. Use the same origin when returning to saved practice. Opening the HTML as a `file:` URL may restrict browser storage. Plans remain on the current browser/device and are never uploaded by this app. If storage is unavailable or full, the app displays a warning and still supports export. Running timers reset on reload or a change of part/theme. Changing questions pauses the response clock and preserves its remaining time; the next task must have a keyword plan and a chosen layout before that clock can be resumed. Editing pauses the response clock too. Timers use wall-clock deadlines so returning from a background tab updates the remaining time correctly.
+Visit `http://localhost:8080`. Use the same origin when returning to saved practice. Opening the HTML as a `file:` URL may restrict browser storage. Plans remain on the current browser/device and are never uploaded by this app. If storage is unavailable or full, the app displays a warning and still supports export. Running timers reset on reload or a change of part/theme. Changing questions stops and resets the response clock. A fresh task begins at the question screen; returning to a saved task restores its stage. A keyword plan and a chosen layout are required before speaking. Reloading a speaking screen requires starting the new clock before finishing. The review stage is available only after a response finishes. Editing pauses the response clock too. Timers use wall-clock deadlines so returning from a background tab updates the remaining time correctly.
 
 ## Deploy
 
@@ -53,7 +55,7 @@ Publish the `dist` directory on any static host. For GitHub Pages, the included 
 npm run check
 ```
 
-Checks cover content completeness, four-word limits on all supplied and custom entries, duplicate handling, plan persistence and task isolation, layout readiness, manual timer transitions, independent preparation and response timing, delayed background-tab updates, legacy note preservation and storage failure recovery. No external test dependencies are needed.
+Checks cover content completeness, four-word limits on all supplied and custom entries, duplicate handling, plan persistence and task isolation, layout readiness, exactly one visible stage, forward-stage guards, saved stage restoration, early finish and automatic expiry leading to review, retry and next-task behaviour, motion preferences, manual timer transitions, independent preparation and response timing, delayed background-tab updates, legacy note preservation and storage failure recovery. No external test dependencies are needed.
 
 ## Educational scope and sources
 
