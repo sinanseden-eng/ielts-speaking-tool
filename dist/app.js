@@ -16,8 +16,10 @@
     part: DATA.parts.some(p => p.id === saved.part) ? saved.part : 'p1',
     indices: saved.indices && typeof saved.indices === 'object' && !Array.isArray(saved.indices) ? saved.indices : {},
     tasks: saved.tasks && typeof saved.tasks === 'object' && !Array.isArray(saved.tasks) ? saved.tasks : {},
-    motion: saved.motion !== false
+    motion: saved.motion !== false,
+    screen: saved.screen==='practice'?'practice':'hub'
   };
+  state.pendingTheme=state.theme;
   const STAGES = [
     {id:'question', label:'Question', title:'Meet your question', description:'Read it. Picture your answer.', symbol:'?'},
     {id:'plan', label:'Plan', title:'Collect a few good words', description:'Pick a section. Choose useful chunks and a word to try.', symbol:'✎'},
@@ -64,7 +66,7 @@
   }
   function save() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({theme:state.theme,part:state.part,indices:state.indices,tasks:state.tasks,motion:state.motion}));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({theme:state.theme,part:state.part,indices:state.indices,tasks:state.tasks,motion:state.motion,screen:state.screen}));
       storageAvailable = true;
     } catch { storageAvailable = false; }
     $('save-status').textContent = storageAvailable ? 'Saved on this device' : 'Not saved · export a copy';
@@ -77,13 +79,14 @@
     toastTimeout = setTimeout(() => $('toast').classList.remove('visible'), 3500);
   }
   function showPracticeNotice() {
-    if(!['p1','p3'].includes(state.part))return;
+    if(state.screen!=='practice'||!['p1','p3'].includes(state.part))return;
     $('practice-notice-part').textContent=`PART ${state.part.slice(1)} · A QUICK REMINDER`;
     if(!$('practice-notice').open)$('practice-notice').showModal();
   }
   function renderMotion() {
     const reduced = typeof matchMedia==='function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     $('journey-card').classList.toggle('motion-off',!state.motion || reduced);
+    document.body.dataset.motion=state.motion&&!reduced?'on':'off';
     $('motion-toggle').textContent = reduced ? '✦ Reduced motion' : state.motion ? '✦ Motion on' : '✦ Motion off';
     $('motion-toggle').setAttribute('aria-pressed',String(state.motion && !reduced));
   }
@@ -93,13 +96,16 @@
     const effects=$('stage-effects');
     effects.innerHTML=Array.from({length:9},(_,i)=>`<span style="--i:${i};--x:${8+i*10}%;--spin:${i%2?120:-110}deg">${i%3?'✦':'●'}</span>`).join('');
     const panel=$(STAGES.find(s=>s.id===taskData().stage).id==='plan'?'planner-builder':taskData().stage==='speak'?'response-stage':taskData().stage+'-stage');
-    if(typeof panel.animate==='function') panel.animate([{opacity:.25,transform:'translateY(12px)'},{opacity:1,transform:'translateY(0)'}],{duration:360,easing:'ease-out'});
+    if(typeof panel.animate==='function') panel.animate([{opacity:.25,transform:'translateX(28px)'},{opacity:1,transform:'translateX(0)'}],{duration:360,easing:'ease-out'});
   }
   function renderStage() {
     const task=taskData(), position=STAGES.findIndex(s=>s.id===task.stage), current=STAGES[position];
     const panels={question:'question-stage',plan:'planner-builder',layout:'layout-stage',speak:'response-stage',review:'review-stage'};
     for(const [stage,id] of Object.entries(panels)) $(id).hidden=stage!==current.id;
     $('journey-card').dataset.stage=current.id;
+    document.body.dataset.stage=current.id;
+    $('mentor-image').src=current.id==='speak'||current.id==='review'?'./assets/mentor-girl.webp':'./assets/mentor-boy.webp';
+    $('mentor-bubble').textContent={question:'Your ideas matter.',plan:'Keywords first.',layout:'Find your flow.',speak:'You’ve got this.',review:'A little better, every time.'}[current.id];
     $('stage-kicker').textContent=`STEP ${position+1} OF 5 · ${current.label.toUpperCase()}`;
     $('stage-title').textContent=current.title;
     $('stage-description').textContent=current.description;
@@ -199,6 +205,20 @@
     const chosen=plan.groups[group.id].some(entry=>entry.text.toLocaleLowerCase()===item.text.toLocaleLowerCase());
     $('language-suggestion').innerHTML=`<div class="suggestion-topline"><span class="plan-mini-label">A WORD TO TRY</span></div><strong class="suggested-text">${escape(item.text)}</strong><p class="suggestion-meaning">${escape(item.meaning)}</p><div class="suggestion-actions"><button type="button" class="expression-option ${chosen?'chosen':''}" id="pick-suggestion" aria-label="${chosen?'Added':'Add'} ${escape(item.text)}${chosen?'':' to '+escape(group.label)}" ${chosen?'disabled':''}>${chosen?'Added ✓':'Add to my notes ＋'}</button></div>`;
   }
+  const WORLD_ICONS={home:'⌂',travel:'✈',technology:'▣',learning:'▤',nature:'△',food:'♨'};
+  function renderHub() {
+    $('world-grid').innerHTML=DATA.themes.map((t,i)=>`<button class="world-tile world-${i} ${t.id===state.pendingTheme?'selected':''}" data-hub-theme="${t.id}" aria-pressed="${t.id===state.pendingTheme}" aria-label="${escape(t.name)}. ${escape(t.subtitle)}"><span class="tile-photo" aria-hidden="true"></span><span class="tile-shade" aria-hidden="true"></span><span class="world-selected">${t.id===state.pendingTheme?'✓ Selected':''}</span><span class="world-tile-copy"><span class="world-icon" aria-hidden="true">${WORLD_ICONS[t.id]}</span><strong>${escape(t.name)}</strong></span></button>`).join('');
+    $('hub-context').textContent=DATA.themes.find(t=>t.id===state.pendingTheme).context;
+  }
+  function renderScreens() {
+    const hub=state.screen==='hub';
+    document.body.dataset.screen=state.screen;
+    $('skip-link').href=hub?'#hub-title':'#stage-title';
+    if(hub)document.title='Choose your world | Speaking Studio';
+    document.body.dataset.world=hub?state.pendingTheme:state.theme;
+    $('theme-hub').hidden=!hub;$('main').hidden=hub;$('practice-sidebar').hidden=hub;
+    if(hub)renderHub();
+  }
   function render() {
     const p = part();
     $('main').dataset.part = state.part;
@@ -210,7 +230,7 @@
     $('part-description').textContent = p.description;
     $('part-duration').textContent = p.duration;
     document.title = `${theme().name} · Part ${state.part.slice(1)} | Speaking Studio`;
-    renderNav(); renderTask();  renderPresets(); renderClock(); save();
+    renderNav(); renderTask();renderScreens();renderPresets();renderClock();save();
   }
   function renderPlanner() {
     const task=taskData(),plan=task.planner,groups=sectionsForTask();
@@ -293,7 +313,7 @@
   }
   function switchTheme(id) {
     if (!DATA.themes.some(t => t.id === id)) return;
-    state.theme = id;
+    state.theme = id;state.pendingTheme=id;state.screen='practice';
     resetPrepClock();
     resetTimer(0); render();
     $('theme-dialog').close();
@@ -321,13 +341,21 @@
     $('clock').textContent = `${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
     $('clock').setAttribute('aria-label',`${min} minutes ${sec} seconds remaining`);
     $('clock').classList.toggle('finished',timer.remaining===0);
+    const fraction=Math.max(0,Math.min(1,timer.remaining/timer.duration));
+    $('sand-top').setAttribute('y',String(20+34*(1-fraction)));
+    $('sand-top').setAttribute('height',String(34*fraction));
+    $('sand-bottom').setAttribute('points',`30,94 82,94 56,${94-36*(1-fraction)}`);
+    $('timer-orbit').style.strokeDashoffset=String(100*(1-fraction));
+    $('timer-visual').classList.toggle('flowing',timer.running);
+    $('timer-visual').classList.toggle('time-low',timer.remaining>0&&timer.remaining<=30);
+    $('sand-stream').style.opacity=timer.running&&timer.remaining>0?'1':'0';
     $('timer-start').innerHTML = timer.running ? '<span aria-hidden="true">Ⅱ</span> Pause clock' : timer.remaining === 0 ? '<span aria-hidden="true">↺</span> Start again' : timer.remaining < timer.duration ? '<span aria-hidden="true">▶</span> Resume clock' : '<span aria-hidden="true">▶</span> Start clock';
     $('timer-start').setAttribute('aria-pressed',String(timer.running));
     $('timer-start').disabled=taskData().stage!=='speak'||!PLAN.ready(taskData().planner);
     $('finish-response').disabled=!responseStarted;
     $('journey-card').classList.toggle('is-speaking',timer.running);
     $('timer-progress').style.width = `${100*(timer.duration-timer.remaining)/timer.duration}%`;
-    const message = !PLAN.ready(taskData().planner)?'Add target words and choose a layout before speaking.':timer.remaining===0?'Time is up. Finish your answer, then reflect on your response.':timer.running?'Speaking time. Follow your keywords and make sentences aloud.':timer.remaining<timer.duration?'Paused. Take a breath, then continue.':'Your plan is ready. Start the clock when you are.';
+    const message = !PLAN.ready(taskData().planner)?'Add target words and choose a layout before speaking.':timer.remaining===0?'Time is up. Finish your answer, then reflect on your response.':timer.running&&timer.remaining<=30?'Last 30 seconds. Bring your answer to a close.':timer.running?'Speaking time. Follow your keywords and make sentences aloud.':timer.remaining<timer.duration?'Paused. Take a breath, then continue.':'Your plan is ready. Start the clock when you are.';
     if ($('timer-message').textContent !== message) $('timer-message').textContent = message;
   }
   function toggleTimer() {
@@ -362,13 +390,15 @@
   setInterval(() => {if(timer.running){syncTimer();renderClock();}if(prepTimer.running){syncPrepClock();renderPrepClock();}},200);
   document.addEventListener('visibilitychange',()=>{syncTimer();renderClock();syncPrepClock();renderPrepClock();});
   function openThemes() {
-    $('theme-options').innerHTML = DATA.themes.map(t=>`<button class="theme-option ${t.id===state.theme?'selected':''}" data-theme="${t.id}" aria-pressed="${t.id===state.theme}"><span class="theme-emoji" style="background:${t.color}" aria-hidden="true">${t.icon}</span>${t.id===state.theme?'<span class="theme-selected">✓ Current theme</span>':''}<strong>${escape(t.name)}</strong><small>${escape(t.subtitle)}</small></button>`).join('');
-    $('theme-dialog').showModal();
+    pauseResponse();syncPrepClock();prepTimer.running=false;prepTimer.deadline=null;
+    state.screen='hub';state.pendingTheme=state.theme;renderScreens();save();
+    $('hub-title').focus({preventScroll:true});
+    $('theme-hub').scrollIntoView({behavior:'auto',block:'start'});
   }
   function showGuide(type) {
     if (type === 'how') {
       $('info-title').textContent = 'A practice routine that works for you.';
-      $('info-content').innerHTML = `<p>Choose a context and carry it through all three parts. Work alone, with a partner or with your teacher.</p><ol><li><strong>Read the task.</strong> Think of a real experience or a position you can explain.</li><li><strong>Collect words.</strong> Choose a task-specific section such as Reason or Example. Each section offers useful speaking chunks and one randomly chosen vocabulary suggestion with a meaning. Add a chunk, the suggested vocabulary, or your own keywords. The full question stays visible in every step. Every entry has a strict four-word limit, including pasted text.</li><li><strong>Choose your layout.</strong> After adding at least one target word, choose Spidergram or Listing. Your selected expressions and keywords become a speaking plan. Only this step is shown until you choose a layout.</li><li><strong>Speak from the plan.</strong> The response clock appears with your plan. Start it yourself and build full sentences aloud. Editing pauses the response clock. A new question gets a fresh clock.</li><li><strong>For Part 2, prepare then speak.</strong> Use the optional one-minute preparation clock while collecting words. Choose a layout, then manually start the two-minute response clock. The clocks never start each other.</li><li><strong>Reflect and repeat.</strong> The checklist appears after the clock ends or you press I’ve finished. Tick what went well and add a next goal of up to four words. Marking a task as practised does not award a score.</li></ol><div class="band-note">Planning support is a training aid. The real test provides preparation notes for Part 2. Our theme-linked Part 1 sets are learning activities; the actual interview covers a range of familiar topics. The real Speaking test takes 11–14 minutes.</div><h3>Your work, on your device</h3><p>Each task’s words, assigned vocabulary, chosen layout, checklists and practice markers are saved in this browser. They do not sync between devices. Export your theme practice to keep a copy. Original notes from the earlier version are retained in your export and imported as short entries. Your current step is saved too. Clocks reset on reload or a new task. Turn motion off with the button above your task; reduced-motion device settings are always respected.</p><div class="source-links"><a href="https://ielts.org/take-a-test/test-types/ielts-academic-test/ielts-academic-format-speaking" target="_blank" rel="noopener noreferrer">Official test format ↗</a></div>`;
+      $('info-content').innerHTML = `<p>Choose a world from the photo tiles and carry that context through all three parts. Work alone, with a partner or with your teacher.</p><ol><li><strong>Read the task.</strong> Think of a real experience or a position you can explain.</li><li><strong>Collect words.</strong> Choose a task-specific section such as Reason or Example. Each section offers useful speaking chunks and one randomly chosen vocabulary suggestion with a meaning. Add a chunk, the suggested vocabulary, or your own keywords. The full question stays visible in every step. Every entry has a strict four-word limit, including pasted text.</li><li><strong>Choose your layout.</strong> After adding at least one target word, choose Spidergram or Listing. Your selected expressions and keywords become a speaking plan. Only this step is shown until you choose a layout.</li><li><strong>Speak from the plan.</strong> The response clock appears with your plan. Start it yourself and build full sentences aloud. The hourglass and progress ring follow the same clock; pausing stops the sand too. Editing pauses the response clock. A new question gets a fresh clock.</li><li><strong>For Part 2, prepare then speak.</strong> Use the optional one-minute preparation clock while collecting words. Choose a layout, then manually start the two-minute response clock. The clocks never start each other.</li><li><strong>Reflect and repeat.</strong> The checklist appears after the clock ends or you press I’ve finished. Tick what went well and add a next goal of up to four words. Marking a task as practised does not award a score.</li></ol><div class="band-note">Planning support is a training aid. The real test provides preparation notes for Part 2. Our theme-linked Part 1 sets are learning activities; the actual interview covers a range of familiar topics. The real Speaking test takes 11–14 minutes.</div><h3>Your work, on your device</h3><p>Each task’s words, assigned vocabulary, chosen layout, checklists and practice markers are saved in this browser. They do not sync between devices. Export your theme practice to keep a copy. Original notes from the earlier version are retained in your export and imported as short entries. Your current step is saved too. Clocks reset on reload or a new task. Turn motion off with the button above your task; reduced-motion device settings are always respected.</p><div class="source-links"><a href="https://ielts.org/take-a-test/test-types/ielts-academic-test/ielts-academic-format-speaking" target="_blank" rel="noopener noreferrer">Official test format ↗</a></div>`;
     } else {
       $('info-title').textContent = 'What makes effective speaking?';
       $('info-content').innerHTML = `<p>IELTS assesses four areas across the whole Speaking test. Use them to reflect on your practice. A ticked checklist does not predict a band score.</p><div class="guide-grid"><div class="guide-box"><h3>Fluency & coherence</h3><p>Keep speaking, develop relevant ideas and connect them in a way the listener can follow. Pauses to think are natural.</p></div><div class="guide-box"><h3>Lexical resource</h3><p>Choose vocabulary that communicates your meaning accurately. Explain an idea another way when the word you want is missing.</p></div><div class="guide-box"><h3>Grammatical range & accuracy</h3><p>Use both simple and complex sentence forms where appropriate, with control of grammar and tense.</p></div><div class="guide-box"><h3>Pronunciation</h3><p>Make yourself easy to understand through clear sounds, rhythm, stress and intonation. You do not need to imitate a particular accent.</p></div></div><h3>Useful development goals</h3><p><strong>Towards band 6:</strong> sustain longer answers, paraphrase when needed, combine short and complex forms, and make your meaning generally clear.</p><p><strong>Towards band 7:</strong> develop longer turns with connected ideas, use vocabulary flexibly, produce frequent accurate sentences, and improve control of your delivery.</p><p><strong>Towards band 8:</strong> develop ideas coherently, choose precise vocabulary, make most sentences accurate, and use stress and intonation flexibly.</p><div class="band-note">These are condensed learning goals based on the supplied public descriptors. They are not a complete scoring rubric. Qualified IELTS examiners assess performance across the test; this site provides no automated band scores.</div><div class="source-links"><a href="./ielts-speaking-band-descriptors.pdf" target="_blank" rel="noopener">Read the full band descriptors (PDF) ↗</a><a href="https://ielts.org/take-a-test/test-types/ielts-academic-test/ielts-academic-format-speaking" target="_blank" rel="noopener noreferrer">Official test format ↗</a></div>`;
@@ -405,6 +435,7 @@
   document.addEventListener('click',event=>{
     const target = event.target.closest('button');
     if (!target) return;
+    if(target.dataset.hubTheme && DATA.themes.some(t=>t.id===target.dataset.hubTheme)){state.pendingTheme=target.dataset.hubTheme;renderScreens();}
     if (target.dataset.part) switchPart(target.dataset.part);
     if (target.dataset.question!==undefined) goQuestion(Number(target.dataset.question));
     if (target.dataset.theme) switchTheme(target.dataset.theme);
@@ -422,6 +453,10 @@
     if (target.dataset.layout){const task=taskData();if(['layout','speak'].includes(task.stage)&&PLAN.chooseMode(task.planner,target.dataset.layout)){save();goStage('speak');}}
     if (target.classList.contains('dialog-close')) target.closest('dialog').close();
     switch(target.id) {
+      case 'home-button': openThemes();break;
+      case 'start-practice': switchTheme(state.pendingTheme);break;
+      case 'hub-help': showGuide('how');break;
+      case 'global-assessment': showGuide('assessment');break;
       case 'practice-notice-continue': $('practice-notice').close();$('stage-title').focus({preventScroll:true});break;
       case 'pick-suggestion': {if(taskData().stage==='plan'){const {item}=currentSuggestion();addToPlan(item.text,item.kind,true);}break;}
       case 'previous-question': goQuestion(questionIndex()-1); break;

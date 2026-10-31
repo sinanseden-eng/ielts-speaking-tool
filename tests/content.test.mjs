@@ -8,6 +8,7 @@ const planner = fs.readFileSync(new URL('../dist/planner.js', import.meta.url),'
 const app = fs.readFileSync(new URL('../dist/app.js', import.meta.url),'utf8');
 function boot(initial='{}', storageFails=false, reducedMotion=false, randomValue=0) {
   let now=100000, stored=initial;
+  try{const input=JSON.parse(initial);if(input&&typeof input==='object'&&!Array.isArray(input))stored=JSON.stringify({screen:'practice',...input});}catch{}
   const elements=new Map(), handlers=new Map(), intervals=[];
   function element(id) {
     if(elements.has(id)) return elements.get(id);
@@ -19,7 +20,7 @@ function boot(initial='{}', storageFails=false, reducedMotion=false, randomValue
       closest(){return this;}
     };elements.set(id,e);return e;
   }
-  const document={getElementById:element,querySelector:element,querySelectorAll:()=>[],addEventListener:(k,v)=>handlers.set(k,v)};
+  const document={body:element('body'),getElementById:element,querySelector:element,querySelectorAll:()=>[],addEventListener:(k,v)=>handlers.set(k,v)};
   const testMath=Object.create(Math);testMath.random=()=>randomValue;
   const context={Math:testMath,window:{},document,matchMedia:()=>({matches:reducedMotion,addEventListener(){}}),localStorage:{getItem:()=>{if(storageFails)throw Error('Unavailable');return stored;},setItem:(_,v)=>{if(storageFails)throw Error('Quota exceeded');stored=v;}},Date:class extends Date{static now(){return now;}},setInterval:fn=>intervals.push(fn),setTimeout:()=>0,clearTimeout:()=>{},Blob,URL};
   vm.createContext(context);vm.runInContext(content,context);vm.runInContext(language,context);vm.runInContext(planner,context);vm.runInContext(app,context);
@@ -44,6 +45,17 @@ reminder.click('practice-notice-continue');reminder.click('part',{part:'p1'});
 assert.equal(reminder.element('practice-notice').open,true,'Returning to Part 1 shows it again');
 const reminderReload=boot(JSON.stringify(reminder.stored()));assert.equal(reminderReload.element('practice-notice').open,true);
 const part2Start=boot(JSON.stringify({part:'p2'}));assert.notEqual(part2Start.element('practice-notice').open,true);
+
+// The photo hub chooses a theme before opening the saved practice carousel.
+const hub=boot(JSON.stringify({screen:'hub'}));
+assert.equal(hub.element('theme-hub').hidden,false);assert.equal(hub.element('main').hidden,true);
+assert.notEqual(hub.element('practice-notice').open,true);
+assert.equal((hub.element('world-grid').innerHTML.match(/data-hub-theme=/g)||[]).length,6);
+hub.click('tile',{hubTheme:'travel'});assert.match(hub.element('world-grid').innerHTML,/travel/);
+hub.click('start-practice');assert.equal(hub.stored().theme,'travel');assert.equal(hub.stored().screen,'practice');
+assert.equal(hub.element('main').hidden,false);assert.equal(hub.element('practice-notice').open,true);
+hub.click('practice-notice-continue');hub.click('home-button');
+assert.equal(hub.element('theme-hub').hidden,false);assert.equal(hub.stored().theme,'travel');
 
 const site=boot();
 const D=site.data;
@@ -236,6 +248,23 @@ const back=boot();back.click('begin-planning');back.submit('one keyword');back.c
 stage(back,'question-stage');back.click('begin-planning');back.click('remove',{removeEntry:'0'});
 back.click('choose-style');stage(back,'planner-builder');
 
+// The hourglass and orbit follow elapsed time and freeze with the manual pause.
+const visual=boot();plan(visual,'quiet streets');
+assert.equal(Number(visual.element('sand-top').attributes.height),34);
+visual.click('timer-start');assert.ok(visual.element('timer-visual').classList.contains('flowing'));
+visual.advance(120000);assert.equal(Number(visual.element('sand-top').attributes.height),17);
+assert.equal(Number(visual.element('timer-orbit').style.strokeDashoffset),50);
+visual.click('timer-start');visual.advance(20000);assert.equal(Number(visual.element('sand-top').attributes.height),17);
+assert.equal(visual.element('sand-stream').style.opacity,'0');
+visual.click('timer-start');visual.advance(90000);assert.ok(visual.element('timer-visual').classList.contains('time-low'));
+assert.match(visual.element('timer-message').textContent,/Last 30 seconds/);
+visual.click('timer-reset');assert.equal(Number(visual.element('sand-top').attributes.height),34);
+assert.equal(visual.element('timer-visual').classList.contains('time-low'),false);
+visual.click('timer-start');visual.advance(1000);visual.click('home-button');visual.advance(10000);
+assert.equal(visual.element('clock').textContent,'03:59','Returning to the theme hub pauses the response');
+visual.click('start-practice');assert.match(visual.element('plan-display').innerHTML,/quiet streets/,'The hub preserves selected notes');
+for(const file of ['worlds.webp','city.webp','mentor-boy.webp','mentor-girl.webp'])assert.ok(fs.statSync(new URL('../dist/assets/'+file,import.meta.url)).size>1000);
+
 // Student-entered markup is displayed as text, never inserted as an HTML element.
 const safe=boot();plan(safe,'<img src=x>');
 assert.match(safe.element('plan-display').innerHTML,/&lt;img/);
@@ -254,4 +283,4 @@ unavailable.click('begin-planning');unavailable.submit('still works');assert.mat
 const corrupt=boot('{bad json');assert.equal(corrupt.element('clock').textContent,'04:00');
 const malformed=boot(JSON.stringify({theme:'unknown',part:'p9',indices:[],tasks:[]}));
 assert.equal(malformed.element('theme-name').textContent,'Home & hometown');
-console.log('Passed: repeated Part 1/3 reminders, 318 vocabulary pools, restored chunks, one saved random word, no level labels or shuffle button, persistent question, five exclusive stages, guarded progression, manual and automatic review, motion preference, 78 tasks, 108 words, four-word limits, both plan layouts, task isolation, saved plans, gated speech clocks, independent preparation and storage recovery.');
+console.log('Passed: photo hub, hourglass synchronization, repeated Part 1/3 reminders, 318 vocabulary pools, restored chunks, one saved random word, no level labels or shuffle button, persistent question, five exclusive stages, guarded progression, manual and automatic review, motion preference, 78 tasks, 108 words, four-word limits, both plan layouts, task isolation, saved plans, gated speech clocks, independent preparation and storage recovery.');

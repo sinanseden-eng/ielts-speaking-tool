@@ -2,6 +2,16 @@
 
 A responsive, browser-based IELTS Speaking practice website. Six original theme packs connect all three parts: **Home & hometown**, **Travel & discovery**, **Technology & daily life**, **Learning & skills**, **Nature & outdoors**, and **Food & traditions**.
 
+## Cinematic Manga Studio
+
+The site opens to a Metro-style photo hub with six themes, then follows a single-card carousel through Question → Plan → Note style → Speak → Review. Dimmed, theme-linked photographs and original manga illustrations frame the activity. The artwork stays behind the card, and decorative characters hide on smaller screens so controls remain reachable.
+
+The speaking timer combines a draining hourglass, a progress orbit and a digital countdown. Sand and orbit use the same wall-clock state as the countdown; pausing freezes the display, resetting refills it, and the final 30 seconds introduce a soft colour cue and closing prompt. Reduced-motion settings and the manual motion toggle disable decorative animation. The two minute Part 2 response and optional one-minute planning clock stay independent.
+
+Returning to the theme hub pauses a response and preserves notes. Starting practice restores the chosen theme and saved task stage with a fresh clock. New visits default to the hub unless the browser saved an active practice screen.
+
+Artwork is documented in [ASSETS.md](ASSETS.md). Optimized WebP artwork totals approximately 450 KB, with no external image-service dependency.
+
 ## Included
 
 - 78 practice tasks: six Part 1 questions, one Part 2 cue card and six Part 3 questions per theme.
@@ -56,7 +66,7 @@ Publish the `dist` directory on any static host. For GitHub Pages, the included 
 npm run check
 ```
 
-Checks cover all 318 section banks, one-word presentation alongside restored chunks, random assignment and persistence, absence of level labels and shuffle controls, draft preservation, persistent questions, content completeness, four-word limits on all supplied and custom entries, duplicate handling, plan persistence and task isolation, layout readiness, exactly one visible stage, forward-stage guards, saved stage restoration, early finish and automatic expiry leading to review, retry and next-task behaviour, motion preferences, manual timer transitions, independent preparation and response timing, delayed background-tab updates, legacy note preservation and storage failure recovery. No external test dependencies are needed.
+Checks cover hub selection and saved practice, hourglass/orbit synchronization, pause/reset and final-seconds behaviour, all 318 section banks, one-word presentation alongside restored chunks, random assignment and persistence, absence of level labels and shuffle controls, draft preservation, persistent questions, content completeness, four-word limits on all supplied and custom entries, duplicate handling, plan persistence and task isolation, layout readiness, exactly one visible stage, forward-stage guards, saved stage restoration, early finish and automatic expiry leading to review, retry and next-task behaviour, motion preferences, manual timer transitions, independent preparation and response timing, delayed background-tab updates, legacy note preservation and storage failure recovery. No external test dependencies are needed.
 
 ## Educational scope and sources
 
