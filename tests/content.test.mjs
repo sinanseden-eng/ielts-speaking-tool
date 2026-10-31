@@ -15,7 +15,7 @@ function boot(initial='{}', storageFails=false, reducedMotion=false, randomValue
     const e={ id,innerHTML:'',textContent:'',value:'',style:{},dataset:{},maxLength:15000,attributes:{},
       classList:{add:c=>classes.add(c),remove:c=>classes.delete(c),toggle:(c,b)=>b?classes.add(c):classes.delete(c),contains:c=>classes.has(c)},
       setAttribute(k,v){this.attributes[k]=v;},addEventListener(k,v){events.set(k,v);},
-      fire(k,event={}){events.get(k)?.(event);},focus(){},scrollIntoView(){},close(){},showModal(){},
+      fire(k,event={}){events.get(k)?.(event);},focus(){},scrollIntoView(){},close(){this.open=false;},showModal(){this.open=true;this.shown=(this.shown||0)+1;},
       closest(){return this;}
     };elements.set(id,e);return e;
   }
@@ -25,6 +25,25 @@ function boot(initial='{}', storageFails=false, reducedMotion=false, randomValue
   vm.createContext(context);vm.runInContext(content,context);vm.runInContext(language,context);vm.runInContext(planner,context);vm.runInContext(app,context);
   return {language:context.window.STUDIO_LANGUAGE,model:context.window.STUDIO_PLANNER,data:context.window.STUDIO,element,stored:()=>JSON.parse(stored),advance(ms){now+=ms;intervals.forEach(fn=>fn());},click(id,dataset={}){const e=element(id);e.dataset=dataset;handlers.get('click')({target:e});},input(id,value){const e=element(id);e.value=value;e.fire('input');handlers.get('input')?.({target:e});},submit(value){element('planner-entry').value=value;handlers.get('submit')({target:element('planner-entry-form'),preventDefault(){}});},change(id,value){const e=element(id);e.value=value;handlers.get('change')?.({target:e});}};
 }
+
+// A fresh reminder appears whenever a Part 1/3 task opens, including repeat visits.
+const reminder=boot();
+assert.equal(reminder.element('practice-notice').open,true);
+assert.match(reminder.element('practice-notice-part').textContent,/PART 1/);
+reminder.click('practice-notice-continue');assert.equal(reminder.element('practice-notice').open,false);
+reminder.click('begin-planning');assert.equal(reminder.element('practice-notice').open,false,'Stage changes do not repeat the reminder');
+reminder.submit('local park');assert.equal(reminder.element('practice-notice').open,false,'Editing does not repeat the reminder');
+reminder.click('next-question');assert.equal(reminder.element('practice-notice').open,true,'Each new question gets a reminder');
+reminder.click('practice-notice-continue');reminder.click('part',{part:'p2'});
+assert.equal(reminder.element('practice-notice').open,false,'No Part 1/3 reminder in Part 2');
+reminder.click('part',{part:'p3'});assert.equal(reminder.element('practice-notice').open,true);
+assert.match(reminder.element('practice-notice-part').textContent,/PART 3/);
+reminder.click('practice-notice-continue');reminder.click('theme',{theme:'travel'});
+assert.equal(reminder.element('practice-notice').open,true,'A new theme starts a new task');
+reminder.click('practice-notice-continue');reminder.click('part',{part:'p1'});
+assert.equal(reminder.element('practice-notice').open,true,'Returning to Part 1 shows it again');
+const reminderReload=boot(JSON.stringify(reminder.stored()));assert.equal(reminderReload.element('practice-notice').open,true);
+const part2Start=boot(JSON.stringify({part:'p2'}));assert.notEqual(part2Start.element('practice-notice').open,true);
 
 const site=boot();
 const D=site.data;
@@ -235,4 +254,4 @@ unavailable.click('begin-planning');unavailable.submit('still works');assert.mat
 const corrupt=boot('{bad json');assert.equal(corrupt.element('clock').textContent,'04:00');
 const malformed=boot(JSON.stringify({theme:'unknown',part:'p9',indices:[],tasks:[]}));
 assert.equal(malformed.element('theme-name').textContent,'Home & hometown');
-console.log('Passed: 318 vocabulary pools, restored chunks, one saved random word, no level labels or shuffle button, persistent question, five exclusive stages, guarded progression, manual and automatic review, motion preference, 78 tasks, 108 words, four-word limits, both plan layouts, task isolation, saved plans, gated speech clocks, independent preparation and storage recovery.');
+console.log('Passed: repeated Part 1/3 reminders, 318 vocabulary pools, restored chunks, one saved random word, no level labels or shuffle button, persistent question, five exclusive stages, guarded progression, manual and automatic review, motion preference, 78 tasks, 108 words, four-word limits, both plan layouts, task isolation, saved plans, gated speech clocks, independent preparation and storage recovery.');

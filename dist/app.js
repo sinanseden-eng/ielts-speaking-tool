@@ -76,6 +76,11 @@
     $('toast').classList.add('visible');
     toastTimeout = setTimeout(() => $('toast').classList.remove('visible'), 3500);
   }
+  function showPracticeNotice() {
+    if(!['p1','p3'].includes(state.part))return;
+    $('practice-notice-part').textContent=`PART ${state.part.slice(1)} · A QUICK REMINDER`;
+    if(!$('practice-notice').open)$('practice-notice').showModal();
+  }
   function renderMotion() {
     const reduced = typeof matchMedia==='function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     $('journey-card').classList.toggle('motion-off',!state.motion || reduced);
@@ -272,6 +277,7 @@
     state.indices[indexKey()] = i;
     resetTimer(0);renderTask();save();animateMoment();
     $('stage-title').focus({preventScroll:true});
+    showPracticeNotice();
   }
   function switchPart(id) {
     if (id === state.part || !DATA.parts.some(p => p.id === id)) return;
@@ -283,15 +289,16 @@
     $('part-heading').scrollIntoView({behavior:'auto',block:'start'});
     $('stage-title').focus({preventScroll:true});
     if (wasRunning) toast('New part, fresh clock. Your notes are saved.');
+    showPracticeNotice();
   }
   function switchTheme(id) {
     if (!DATA.themes.some(t => t.id === id)) return;
     state.theme = id;
     resetPrepClock();
-    if(typeof matchMedia==='function')matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',renderMotion);
-  resetTimer(0); render();
+    resetTimer(0); render();
     $('theme-dialog').close();
     toast(`Ready to talk about ${theme().name.toLowerCase()}?`);
+    showPracticeNotice();
   }
   function renderPresets() {
     $('timer-caption').textContent = part().timerCaption;
@@ -415,6 +422,7 @@
     if (target.dataset.layout){const task=taskData();if(['layout','speak'].includes(task.stage)&&PLAN.chooseMode(task.planner,target.dataset.layout)){save();goStage('speak');}}
     if (target.classList.contains('dialog-close')) target.closest('dialog').close();
     switch(target.id) {
+      case 'practice-notice-continue': $('practice-notice').close();$('stage-title').focus({preventScroll:true});break;
       case 'pick-suggestion': {if(taskData().stage==='plan'){const {item}=currentSuggestion();addToPlan(item.text,item.kind,true);}break;}
       case 'previous-question': goQuestion(questionIndex()-1); break;
       case 'next-question': goQuestion(questionIndex()+1); break;
@@ -472,5 +480,5 @@
   }));
   if(typeof ResizeObserver==='function')new ResizeObserver(drawSpidergram).observe($('plan-display'));
   if(typeof matchMedia==='function')matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',renderMotion);
-  resetTimer(0); render();
+  resetTimer(0); render();showPracticeNotice();
 })();
