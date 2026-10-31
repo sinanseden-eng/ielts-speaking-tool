@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const content = fs.readFileSync(new URL('../dist/content.js', import.meta.url),'utf8');
+const language = fs.readFileSync(new URL('../dist/language.js', import.meta.url),'utf8');
 const planner = fs.readFileSync(new URL('../dist/planner.js', import.meta.url),'utf8');
 const app = fs.readFileSync(new URL('../dist/app.js', import.meta.url),'utf8');
 function boot(initial='{}', storageFails=false, reducedMotion=false) {
@@ -20,8 +21,8 @@ function boot(initial='{}', storageFails=false, reducedMotion=false) {
   }
   const document={getElementById:element,querySelector:element,querySelectorAll:()=>[],addEventListener:(k,v)=>handlers.set(k,v)};
   const context={window:{},document,matchMedia:()=>({matches:reducedMotion,addEventListener(){}}),localStorage:{getItem:()=>{if(storageFails)throw Error('Unavailable');return stored;},setItem:(_,v)=>{if(storageFails)throw Error('Quota exceeded');stored=v;}},Date:class extends Date{static now(){return now;}},setInterval:fn=>intervals.push(fn),setTimeout:()=>0,clearTimeout:()=>{},Blob,URL};
-  vm.createContext(context);vm.runInContext(content,context);vm.runInContext(planner,context);vm.runInContext(app,context);
-  return {model:context.window.STUDIO_PLANNER,data:context.window.STUDIO,element,stored:()=>JSON.parse(stored),advance(ms){now+=ms;intervals.forEach(fn=>fn());},click(id,dataset={}){const e=element(id);e.dataset=dataset;handlers.get('click')({target:e});},input(id,value){const e=element(id);e.value=value;e.fire('input');handlers.get('input')?.({target:e});},submit(value){element('planner-entry').value=value;handlers.get('submit')({target:element('planner-entry-form'),preventDefault(){}});},change(id,value){const e=element(id);e.value=value;handlers.get('change')?.({target:e});}};
+  vm.createContext(context);vm.runInContext(content,context);vm.runInContext(language,context);vm.runInContext(planner,context);vm.runInContext(app,context);
+  return {language:context.window.STUDIO_LANGUAGE,model:context.window.STUDIO_PLANNER,data:context.window.STUDIO,element,stored:()=>JSON.parse(stored),advance(ms){now+=ms;intervals.forEach(fn=>fn());},click(id,dataset={}){const e=element(id);e.dataset=dataset;handlers.get('click')({target:e});},input(id,value){const e=element(id);e.value=value;e.fire('input');handlers.get('input')?.({target:e});},submit(value){element('planner-entry').value=value;handlers.get('submit')({target:element('planner-entry-form'),preventDefault(){}});},change(id,value){const e=element(id);e.value=value;handlers.get('change')?.({target:e});}};
 }
 
 const site=boot();
@@ -66,10 +67,52 @@ const malformedPlan=P.normalize({mode:'html',active:'missing',groups:{opinion:[{
 assert.equal(malformedPlan.mode,null);assert.equal(malformedPlan.active,'opinion');
 assert.equal(malformedPlan.groups.opinion.length,1,'Overlong stored entries are rejected');
 
+// Every task and functional section has one contextual first choice plus alternatives.
+let bankSections=0;
+for(const t of D.themes)for(const part of D.parts){
+  const count=part.id==='p2'?1:t[part.id].length;
+  for(let q=0;q<count;q++)for(const group of P.sections(part.id,t,q)){
+    const bank=site.language.bank(part.id,t,q,group);
+    assert.equal(bank.length,4,`${t.id}/${part.id}/${q}/${group.id}`);
+    assert.equal(bank[0].kind,'word','Every section has a contextual lexical choice');
+    assert.equal(new Set(bank.map(item=>item.text)).size,bank.length);
+    for(const item of bank){
+      assert.ok(P.validate(item.text).ok,item.text);
+      assert.ok(['B2','C1'].includes(item.level));assert.ok(item.meaning.length>10);
+    }
+    bankSections++;
+  }
+}
+assert.equal(bankSections,318);
+const choices=boot();choices.click('begin-planning');
+assert.match(choices.element('language-suggestion').innerHTML,/peaceful surroundings/);
+assert.equal((choices.element('language-suggestion').innerHTML.match(/class="suggested-text"/g)||[]).length,1);
+choices.input('planner-entry','my draft');choices.click('another-suggestion');
+assert.equal(choices.element('planner-entry').value,'my draft','Browsing a bank preserves the draft');
+assert.match(choices.element('language-suggestion').innerHTML,/From my perspective/);
+choices.click('pick-suggestion');assert.equal(choices.element('planner-entry').value,'my draft','Picking a suggestion preserves the draft');
+choices.click('section',{planSection:'reason'});
+assert.match(choices.element('language-suggestion').innerHTML,/a sense of belonging/);
+choices.click('pick-suggestion');
+assert.equal(choices.stored().tasks['home-p1-0'].planner.groups.reason[0].text,'a sense of belonging');
+choices.click('section',{planSection:'opinion'});assert.match(choices.element('language-suggestion').innerHTML,/From my perspective/);
+const choicesRestored=boot(JSON.stringify(choices.stored()));
+assert.match(choicesRestored.element('language-suggestion').innerHTML,/From my perspective/);
+choices.click('next-question');choices.click('begin-planning');
+assert.match(choices.element('language-suggestion').innerHTML,/urban development/);
+assert.equal(choices.stored().tasks['home-p1-1'].planner.suggestions.opinion,0,'Bank position is isolated per question');
+// The shared question block is outside every stage panel and is never hidden.
+const html=fs.readFileSync(new URL('../dist/index.html',import.meta.url),'utf8');
+assert.ok(html.indexOf('id="task-anchor"')<html.indexOf('data-stage-panel="question"'));
+assert.doesNotMatch(html,/<(?:section|div)[^>]*id="task-anchor"[^>]*hidden/);
+assert.doesNotMatch(html,/Remind me of the question/);
+
 // Exactly one stage is visible, and later work cannot be skipped into.
 const panelIds=['question-stage','planner-builder','layout-stage','response-stage','review-stage'];
 function stage(app,expected){
   assert.deepEqual(panelIds.filter(id=>!app.element(id).hidden),[expected]);
+  assert.notEqual(app.element('task-anchor').hidden,true);
+  assert.match(app.element('task-content').innerHTML,/<h3 id="task-title"/);
 }
 function plan(app,word,layout='list'){
   app.click('begin-planning');app.submit(word);app.click('choose-style');app.click('layout',{layout});
@@ -83,7 +126,7 @@ site.click('choose-style');stage(site,'planner-builder');
 site.submit('This is five words here');
 assert.equal(site.stored().tasks['home-p1-0'].planner.groups.opinion.length,0);
 assert.match(site.element('toast').textContent,/Four words maximum/);
-site.click('expression',{planExpression:'0'});site.click('choose-style');stage(site,'planner-builder');
+site.click('another-suggestion');site.click('pick-suggestion');site.click('choose-style');stage(site,'planner-builder');
 site.submit('quiet park');site.click('choose-style');stage(site,'layout-stage');
 site.click('layout',{layout:'spidergram'});stage(site,'response-stage');
 assert.match(site.element('plan-display').innerHTML,/spidergram/);
@@ -92,8 +135,8 @@ site.click('timer-start');site.advance(4300);assert.equal(site.element('clock').
 site.click('edit-plan');stage(site,'planner-builder');
 site.advance(10000);assert.equal(site.element('clock').textContent,'03:56','Editing pauses the clock');
 site.click('section',{planSection:'reason'});site.submit('fresh air');
-site.change('planner-target','example');site.click('word',{addWord:'0'});
-assert.equal(site.stored().tasks['home-p1-0'].planner.groups.example[0].text,'within walking distance');
+site.click('section',{planSection:'example'});site.click('pick-suggestion');
+assert.equal(site.stored().tasks['home-p1-0'].planner.groups.example[0].text,'local amenities');
 site.click('choose-style');site.click('layout',{layout:'list'});
 assert.match(site.element('plan-display').innerHTML,/listing-plan/);
 site.click('timer-start');site.advance(1000);site.click('finish-response');stage(site,'review-stage');
@@ -173,4 +216,4 @@ unavailable.click('begin-planning');unavailable.submit('still works');assert.mat
 const corrupt=boot('{bad json');assert.equal(corrupt.element('clock').textContent,'04:00');
 const malformed=boot(JSON.stringify({theme:'unknown',part:'p9',indices:[],tasks:[]}));
 assert.equal(malformed.element('theme-name').textContent,'Home & hometown');
-console.log('Passed: five exclusive stages, guarded progression, manual and automatic review, motion preference, 78 tasks, 108 words, four-word limits, both plan layouts, task isolation, saved plans, gated speech clocks, independent preparation and storage recovery.');
+console.log('Passed: 318 section banks, four-word B2/C1 choices, one suggestion, persistent question, saved suggestion browsing, five exclusive stages, guarded progression, manual and automatic review, motion preference, 78 tasks, 108 words, four-word limits, both plan layouts, task isolation, saved plans, gated speech clocks, independent preparation and storage recovery.');

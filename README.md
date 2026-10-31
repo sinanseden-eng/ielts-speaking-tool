@@ -5,10 +5,10 @@ A responsive, browser-based IELTS Speaking practice website. Six original theme 
 ## Included
 
 - 78 practice tasks: six Part 1 questions, one Part 2 cue card and six Part 3 questions per theme.
-- 108 contextual vocabulary entries, each with a definition and an original example.
-- Part-specific expression starters, all four words or fewer, and a contextual starter.
-- Five separate screens in one task card: Question → Plan → Note style → Speak → Review. Only the active stage is shown. The student starts the clock manually; the checklist appears when time ends or they choose **I’ve finished**.
-- A guided keyword planner for every task: choose expressions, add target words in task-specific sections, then choose a spidergram or an ordered list. Every entry is limited to four words, including pasted text. All notes appear with a sticky, manually started response clock. Five reflection checks and a short next-step goal finish each task.
+- A task-specific B2/C1 language bank covering all 318 planning sections across the 78 tasks. Each section offers one contextual vocabulary choice and three functional phrase alternatives, with short meanings or usage hints. One choice appears at a time; **Try another** cycles that section’s bank. B2 focus and C1 stretch labels are teaching targets. The original 108 vocabulary entries and examples remain in the content source.
+- Every selectable word or phrase is four words or fewer. Bank position saves independently for each question and section. Browsing or adding a suggestion preserves a typed draft.
+- Five separate screens in one task card: Question → Plan → Note style → Speak → Review. Only the active stage is shown, with the full question and Part 2 cue points visible above every stage. The student starts the clock manually; the checklist appears when time ends or they choose **I’ve finished**.
+- A guided keyword planner for every task: pick one relevant B2/C1 suggestion at a time, add target words in task-specific sections, then choose a spidergram or an ordered list. Every entry is limited to four words, including pasted text. All notes appear with a sticky, manually started response clock. Five reflection checks and a short next-step goal finish each task.
 - Manual start, pause, resume and reset clocks. Part 2 has an optional one-minute planning clock and a separate two-minute response clock. Neither clock starts the other. Part 1/3 retain selectable four- and five-minute practice limits; students can finish a response earlier. Each new task gets a fresh clock. Editing a plan pauses the response clock.
 - Colour sweeps, sparkle transitions, note pop-ins and gentle speaking animation. A persistent motion toggle and system reduced-motion support disable animations.
 - Saved words, expressions, chosen note-taking layout, active stage and task progress in browser localStorage, isolated by theme, part and question.
@@ -49,13 +49,13 @@ Publish the `dist` directory on any static host. For GitHub Pages, the included 
 
 ## Development
 
-`dist/content.js` contains the original task packs, examples, phrases and reflection checks. `dist/planner.js` defines the four-word validation, task-specific sections, plan state and migration rules. `dist/app.js` implements the planner UI, responsive spidergram connectors, persistence, export and independent clocks. `dist/styles.css` defines the responsive design. `dist/index.html` provides the accessible page structure. Google Fonts enhances the typography when available; system fonts are used otherwise.
+`dist/content.js` contains the original task packs, examples, phrases and reflection checks. `dist/language.js` holds the task-specific vocabulary and functional phrase banks, meanings and B2/C1 teaching targets. `dist/planner.js` defines the four-word validation, task-specific sections, plan state and migration rules. `dist/app.js` implements the planner UI, responsive spidergram connectors, persistence, export and independent clocks. `dist/styles.css` defines the responsive design. `dist/index.html` provides the accessible page structure. Google Fonts enhances the typography when available; system fonts are used otherwise.
 
 ```sh
 npm run check
 ```
 
-Checks cover content completeness, four-word limits on all supplied and custom entries, duplicate handling, plan persistence and task isolation, layout readiness, exactly one visible stage, forward-stage guards, saved stage restoration, early finish and automatic expiry leading to review, retry and next-task behaviour, motion preferences, manual timer transitions, independent preparation and response timing, delayed background-tab updates, legacy note preservation and storage failure recovery. No external test dependencies are needed.
+Checks cover all 318 section banks, one-choice presentation, saved bank positions, draft preservation, persistent questions, content completeness, four-word limits on all supplied and custom entries, duplicate handling, plan persistence and task isolation, layout readiness, exactly one visible stage, forward-stage guards, saved stage restoration, early finish and automatic expiry leading to review, retry and next-task behaviour, motion preferences, manual timer transitions, independent preparation and response timing, delayed background-tab updates, legacy note preservation and storage failure recovery. No external test dependencies are needed.
 
 ## Educational scope and sources
 

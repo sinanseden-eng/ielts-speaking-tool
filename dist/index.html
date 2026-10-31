@@ -9,6 +9,7 @@
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./styles.css">
   <script src="./content.js" defer></script>
+  <script src="./language.js" defer></script>
   <script src="./planner.js" defer></script>
   <script src="./app.js" defer></script>
 </head>
@@ -32,18 +33,18 @@
         <ol id="journey-progress" class="journey-progress" aria-label="Practice progress"></ol>
         <div class="journey-heading"><div><h3 id="stage-title" tabindex="-1">Meet your question</h3><p id="stage-description"></p></div><span class="stage-symbol" id="stage-symbol" aria-hidden="true">?</span></div>
         <div class="stage-effects" id="stage-effects" aria-hidden="true"></div>
+        <section class="task-anchor" id="task-anchor" aria-labelledby="task-title"><div class="card-topline"><span class="overline" id="task-label"></span><span class="small-badge" id="task-count"></span></div><div id="task-content"></div></section>
         <div class="stage-panel" id="question-stage" data-stage-panel="question">
-          <div class="card-topline"><span class="overline" id="task-label"></span><span class="small-badge" id="task-count"></span></div><div id="task-content"></div><div id="question-navigation"></div>
+          <div id="question-navigation"></div>
           <div class="stage-actions"><span class="stage-nudge">Think of something you could say.</span><button class="primary-button" id="begin-planning">Let’s plan <span aria-hidden="true">→</span></button></div>
         </div>
         <div class="stage-panel" id="planner-builder" data-stage-panel="plan" hidden>
-          <details class="question-reminder"><summary>Remind me of the question</summary><div id="planning-question"></div></details>
                         <div class="prep-tools" id="preparation-tools" hidden><div><strong>Optional Part 2 preparation</strong><span>Build your plan in one minute.</span></div><span id="prep-clock" role="timer" aria-label="Preparation time remaining">01:00</span><button id="prep-start" class="outline-button">Start preparation</button><button id="prep-reset" class="icon-button" aria-label="Reset preparation clock">↺</button><p id="prep-status" role="status"></p></div>
               <p id="legacy-notes-message" class="legacy-note" hidden>Earlier notes have been imported as short entries. Your original notes are also kept in Export practice.</p>
               <div class="planner-section-tabs" id="planner-section-tabs" role="tablist" aria-label="Plan sections"></div>
               <div id="planner-editor" role="tabpanel"></div>
 
-          <details class="language-drawer" id="language-drawer"><summary>✧ Need a word? Open the language bank <span aria-hidden="true">＋</span></summary><div class="language-content"><div class="resource-tabs" role="tablist" aria-label="Language support"><button role="tab" id="words-tab" aria-controls="resource-content" aria-selected="true" data-resource="words">Word bank</button><button role="tab" id="phrases-tab" aria-controls="resource-content" aria-selected="false" data-resource="phrases" tabindex="-1">Guiding phrases</button></div><div id="resource-content" role="tabpanel" aria-labelledby="words-tab"></div></div></details>
+
           <div class="stage-actions"><button class="text-button" id="back-question">← Question</button><div><span id="planning-hint" class="action-hint"></span><button class="primary-button" id="choose-style" disabled>My words are ready <span aria-hidden="true">→</span></button></div></div>
         </div>
         <div class="stage-panel" id="layout-stage" data-stage-panel="layout" hidden>

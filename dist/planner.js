@@ -40,8 +40,9 @@ window.STUDIO_PLANNER = (() => {
   function normalize(raw, groups, legacyNotes='') {
     const input = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
     const mode = ['spidergram','list'].includes(input.mode) ? input.mode : null;
-    const result = {mode,editing:input.editing === true || !mode,active:groups.some(g=>g.id===input.active)?input.active:groups[0].id,groups:{}};
+    const result = {mode,editing:input.editing === true || !mode,active:groups.some(g=>g.id===input.active)?input.active:groups[0].id,groups:{},suggestions:{}};
     for (const group of groups) {
+      result.suggestions[group.id]=Number.isSafeInteger(input.suggestions?.[group.id]) && input.suggestions[group.id]>=0 ? input.suggestions[group.id]%100000 : 0;
       const entries = Array.isArray(input.groups?.[group.id]) ? input.groups[group.id] : [];
       const seen = new Set();
       result.groups[group.id] = entries.flatMap(entry=>{
