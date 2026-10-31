@@ -1,6 +1,6 @@
 'use strict';
-// Original language for B2 practice and C1 stretch. Levels are teaching targets.
-// Each task/section has a contextual first choice and a bank of functional alternatives.
+// Original contextual vocabulary for upper-intermediate and advanced speaking practice.
+// Students see one randomly assigned lexical item plus the established section chunks.
 window.STUDIO_LANGUAGE = (() => {
   const TOPICS = {
   "home": {
@@ -2116,302 +2116,227 @@ window.STUDIO_LANGUAGE = (() => {
     ]
   }
 };
-  const FUNCTIONS = {
-  "opinion": [
+  const CUE_ALTERNATIVES = {
+  "home": [
     {
-      "text": "From my perspective,…",
+      "text": "a peaceful retreat",
       "level": "B2",
-      "meaning": "Introduce your own view.",
-      "kind": "expression"
+      "meaning": "a calm place to get away from daily demands",
+      "kind": "word"
     },
     {
-      "text": "What strikes me is…",
-      "level": "C1",
-      "meaning": "Point out something you find noticeable.",
-      "kind": "expression"
+      "text": "centrally located",
+      "level": "B2",
+      "meaning": "situated close to the centre",
+      "kind": "word"
     },
     {
-      "text": "I tend to think…",
+      "text": "welcoming surroundings",
       "level": "B2",
-      "meaning": "Give a view without sounding absolute.",
-      "kind": "expression"
+      "meaning": "an area that makes people feel comfortable",
+      "kind": "word"
+    },
+    {
+      "text": "recharge",
+      "level": "B2",
+      "meaning": "rest and recover your energy",
+      "kind": "word"
+    },
+    {
+      "text": "sentimental value",
+      "level": "B2",
+      "meaning": "importance because of personal memories",
+      "kind": "word"
     }
   ],
-  "reason": [
+  "travel": [
     {
-      "text": "A major factor is…",
+      "text": "an unforgettable journey",
       "level": "B2",
-      "meaning": "Introduce an important cause.",
-      "kind": "expression"
+      "meaning": "a trip you remember very clearly",
+      "kind": "word"
     },
     {
-      "text": "This largely stems from…",
-      "level": "C1",
-      "meaning": "Explain the main source of a situation.",
-      "kind": "expression"
+      "text": "a picturesque setting",
+      "level": "B2",
+      "meaning": "a place with attractive views",
+      "kind": "word"
     },
     {
-      "text": "One underlying reason is…",
-      "level": "C1",
-      "meaning": "Introduce a cause beneath the obvious explanation.",
-      "kind": "expression"
+      "text": "trusted companions",
+      "level": "B2",
+      "meaning": "people you feel comfortable travelling with",
+      "kind": "word"
+    },
+    {
+      "text": "explore independently",
+      "level": "B2",
+      "meaning": "discover places without a guide",
+      "kind": "word"
+    },
+    {
+      "text": "broaden my horizons",
+      "level": "B2",
+      "meaning": "increase my understanding through new experiences",
+      "kind": "word"
     }
   ],
-  "example": [
+  "technology": [
     {
-      "text": "A case in point…",
-      "level": "C1",
-      "meaning": "Introduce a clear example supporting your idea.",
-      "kind": "expression"
+      "text": "a versatile gadget",
+      "level": "B2",
+      "meaning": "a small device with several uses",
+      "kind": "word"
     },
     {
-      "text": "To illustrate this,…",
+      "text": "a multifunctional device",
       "level": "B2",
-      "meaning": "Move from an idea to a specific example.",
-      "kind": "expression"
+      "meaning": "equipment that can do different jobs",
+      "kind": "word"
     },
     {
-      "text": "In practical terms,…",
+      "text": "a recent upgrade",
       "level": "B2",
-      "meaning": "Show how the idea works in real life.",
-      "kind": "expression"
+      "meaning": "a better version obtained not long ago",
+      "kind": "word"
+    },
+    {
+      "text": "simplify everyday tasks",
+      "level": "B2",
+      "meaning": "make ordinary jobs easier to do",
+      "kind": "word"
+    },
+    {
+      "text": "greater efficiency",
+      "level": "B2",
+      "meaning": "achieving more with less effort",
+      "kind": "word"
     }
   ],
-  "balance": [
+  "learning": [
     {
-      "text": "To some extent,…",
+      "text": "a transferable ability",
       "level": "B2",
-      "meaning": "Show that something is partly true.",
-      "kind": "expression"
+      "meaning": "a skill useful in different situations",
+      "kind": "word"
     },
     {
-      "text": "A possible drawback is…",
+      "text": "problem-solving",
       "level": "B2",
-      "meaning": "Introduce a disadvantage.",
-      "kind": "expression"
+      "meaning": "finding ways to deal with difficulties",
+      "kind": "word"
     },
     {
-      "text": "There is a trade-off…",
-      "level": "C1",
-      "meaning": "Explain a benefit that has a cost.",
-      "kind": "expression"
+      "text": "a supportive role model",
+      "level": "B2",
+      "meaning": "someone helpful whose example you follow",
+      "kind": "word"
+    },
+    {
+      "text": "hands-on practice",
+      "level": "B2",
+      "meaning": "learning by doing a task yourself",
+      "kind": "word"
+    },
+    {
+      "text": "practical independence",
+      "level": "B2",
+      "meaning": "being able to manage everyday needs",
+      "kind": "word"
     }
   ],
-  "conclusion": [
+  "nature": [
     {
-      "text": "Taking everything into account,…",
+      "text": "a scenic escape",
       "level": "B2",
-      "meaning": "Consider the different sides before concluding.",
-      "kind": "expression"
+      "meaning": "a visit to a place with beautiful views",
+      "kind": "word"
     },
     {
-      "text": "The key consideration is…",
-      "level": "C1",
-      "meaning": "Identify what matters most.",
-      "kind": "expression"
+      "text": "off the beaten track",
+      "level": "B2",
+      "meaning": "away from the usual tourist routes",
+      "kind": "word"
     },
     {
-      "text": "On balance, I’d say…",
+      "text": "during a weekend getaway",
       "level": "B2",
-      "meaning": "Give your overall judgement.",
-      "kind": "expression"
+      "meaning": "during a short trip away from home",
+      "kind": "word"
+    },
+    {
+      "text": "explore the surroundings",
+      "level": "B2",
+      "meaning": "discover the area around you",
+      "kind": "word"
+    },
+    {
+      "text": "a restorative experience",
+      "level": "B2",
+      "meaning": "something that helps you recover energy",
+      "kind": "word"
     }
   ],
-  "opening": [
+  "food": [
     {
-      "text": "What comes to mind…",
+      "text": "a meaningful celebration",
       "level": "B2",
-      "meaning": "Introduce the example you remember.",
-      "kind": "expression"
+      "meaning": "an event with special personal importance",
+      "kind": "word"
     },
     {
-      "text": "Particularly memorable was…",
-      "level": "C1",
-      "meaning": "Highlight a choice that made an impression.",
-      "kind": "expression"
-    },
-    {
-      "text": "What stands out is…",
+      "text": "in a welcoming setting",
       "level": "B2",
-      "meaning": "Introduce a striking feature.",
-      "kind": "expression"
-    }
-  ],
-  "where": [
+      "meaning": "in a place that feels friendly",
+      "kind": "word"
+    },
     {
-      "text": "Within easy reach…",
+      "text": "close companions",
       "level": "B2",
-      "meaning": "Explain that a place is easy to get to.",
-      "kind": "expression"
+      "meaning": "people you know well and enjoy being with",
+      "kind": "word"
     },
     {
-      "text": "In the vicinity of…",
-      "level": "C1",
-      "meaning": "Continue with a nearby place.",
-      "kind": "expression"
-    },
-    {
-      "text": "Situated just outside…",
+      "text": "a traditional delicacy",
       "level": "B2",
-      "meaning": "Describe the location beyond a named place.",
-      "kind": "expression"
-    }
-  ],
-  "when": [
+      "meaning": "a special food associated with a culture",
+      "kind": "word"
+    },
     {
-      "text": "Around that time,…",
+      "text": "a lasting memory",
       "level": "B2",
-      "meaning": "Set the time of your story.",
-      "kind": "expression"
-    },
-    {
-      "text": "It coincided with…",
-      "level": "C1",
-      "meaning": "Connect it to another event happening then.",
-      "kind": "expression"
-    },
-    {
-      "text": "At that stage,…",
-      "level": "B2",
-      "meaning": "Describe a point in your life or experience.",
-      "kind": "expression"
-    }
-  ],
-  "who": [
-    {
-      "text": "What we share is…",
-      "level": "B2",
-      "meaning": "Introduce a shared interest or quality.",
-      "kind": "expression"
-    },
-    {
-      "text": "A positive influence…",
-      "level": "B2",
-      "meaning": "Describe someone who helped you develop.",
-      "kind": "expression"
-    },
-    {
-      "text": "We share an interest…",
-      "level": "B2",
-      "meaning": "Continue with “in” and a shared activity.",
-      "kind": "expression"
-    }
-  ],
-  "how": [
-    {
-      "text": "Through trial and error,…",
-      "level": "B2",
-      "meaning": "Describe learning by trying and adjusting.",
-      "kind": "expression"
-    },
-    {
-      "text": "Gradually, I became…",
-      "level": "B2",
-      "meaning": "Describe a change that developed over time.",
-      "kind": "expression"
-    },
-    {
-      "text": "The process involved…",
-      "level": "C1",
-      "meaning": "Explain the main steps or activities.",
-      "kind": "expression"
-    }
-  ],
-  "detail": [
-    {
-      "text": "What struck me was…",
-      "level": "C1",
-      "meaning": "Introduce a detail you found remarkable.",
-      "kind": "expression"
-    },
-    {
-      "text": "A distinctive feature was…",
-      "level": "C1",
-      "meaning": "Describe what made it different.",
-      "kind": "expression"
-    },
-    {
-      "text": "It was characterised by…",
-      "level": "C1",
-      "meaning": "Continue with qualities typical of the thing.",
-      "kind": "expression"
-    }
-  ],
-  "meaning": [
-    {
-      "text": "It left me feeling…",
-      "level": "B2",
-      "meaning": "Explain your emotional reaction.",
-      "kind": "expression"
-    },
-    {
-      "text": "With hindsight,…",
-      "level": "C1",
-      "meaning": "Explain what you understand looking back.",
-      "kind": "expression"
-    },
-    {
-      "text": "It gave me insight…",
-      "level": "C1",
-      "meaning": "Continue with “into” and what you understood.",
-      "kind": "expression"
-    }
-  ],
-  "prediction": [
-    {
-      "text": "It is conceivable that…",
-      "level": "C1",
-      "meaning": "Introduce a possible future development.",
-      "kind": "expression"
-    },
-    {
-      "text": "There may well be…",
-      "level": "B2",
-      "meaning": "Describe a possibility you think is likely.",
-      "kind": "expression"
-    },
-    {
-      "text": "Much will depend on…",
-      "level": "B2",
-      "meaning": "Explain a condition affecting the future.",
-      "kind": "expression"
-    }
-  ],
-  "comparison": [
-    {
-      "text": "By comparison,…",
-      "level": "B2",
-      "meaning": "Contrast one situation with another.",
-      "kind": "expression"
-    },
-    {
-      "text": "A marked difference is…",
-      "level": "C1",
-      "meaning": "Highlight an important contrast.",
-      "kind": "expression"
-    },
-    {
-      "text": "In contrast to…",
-      "level": "B2",
-      "meaning": "Continue with the situation being compared.",
-      "kind": "expression"
+      "meaning": "something you remember for a long time",
+      "kind": "word"
     }
   ]
 };
   function bank(partId,theme,index,group) {
     const ids=partId==='p1'?['opinion','reason','example']:partId==='p2'?['opening','cue1','cue2','cue3','meaning']:['opinion','reason','example','balance','conclusion'];
-    const primary=TOPICS[theme.id]?.[partId]?.[partId==='p2'?0:index]?.[ids.indexOf(group.id)];
-    let purpose=group.id;
-    if(partId==='p2' && group.id.startsWith('cue')) {
-      const cue=theme.p2.bullets[Number(group.id.slice(3))-1];
-      purpose=/where/.test(cue)?'where':/when/.test(cue)?'when':/who/.test(cue)?'who':/how/.test(cue)?'how':'detail';
-    }
-    if(partId==='p3' && group.id==='opinion')purpose=group.label==='Prediction'?'prediction':group.label==='Main comparison'?'comparison':'opinion';
+    const taskWords=TOPICS[theme.id]?.[partId]?.[partId==='p2'?0:index]||[];
+    const sectionIndex=ids.indexOf(group.id),primary=taskWords[sectionIndex];
+    // Interview and discussion terms belong to the current question. Cue-card alternatives
+    // stay tied to the exact cue point, so a location never receives a feelings word.
+    const pool=partId==='p2'?[primary,CUE_ALTERNATIVES[theme.id]?.[sectionIndex]]:[primary,...taskWords];
     const seen=new Set();
-    return [primary,...(FUNCTIONS[purpose]||FUNCTIONS.detail)].filter(item=>{
+    return pool.filter(item=>{
       if(!item||seen.has(item.text.toLocaleLowerCase()))return false;
       seen.add(item.text.toLocaleLowerCase());return true;
     }).map(item=>({...item}));
   }
-  return {bank};
+  function assign(plan,partId,theme,index,groups,random=Math.random) {
+    const used=new Set();
+    for(const group of groups){
+      const choices=bank(partId,theme,index,group);
+      if(choices.some(item=>item.text===plan.vocabulary[group.id]))used.add(plan.vocabulary[group.id]);
+      else delete plan.vocabulary[group.id];
+    }
+    for(const group of groups){
+      if(plan.vocabulary[group.id])continue;
+      const choices=bank(partId,theme,index,group),unused=choices.filter(item=>!used.has(item.text));
+      const available=unused.length?unused:choices;
+      const choice=available[Math.floor(random()*available.length)];
+      plan.vocabulary[group.id]=choice.text;used.add(choice.text);
+    }
+  }
+  return {bank,assign};
 })();

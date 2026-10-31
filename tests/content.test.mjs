@@ -6,7 +6,7 @@ const content = fs.readFileSync(new URL('../dist/content.js', import.meta.url),'
 const language = fs.readFileSync(new URL('../dist/language.js', import.meta.url),'utf8');
 const planner = fs.readFileSync(new URL('../dist/planner.js', import.meta.url),'utf8');
 const app = fs.readFileSync(new URL('../dist/app.js', import.meta.url),'utf8');
-function boot(initial='{}', storageFails=false, reducedMotion=false) {
+function boot(initial='{}', storageFails=false, reducedMotion=false, randomValue=0) {
   let now=100000, stored=initial;
   const elements=new Map(), handlers=new Map(), intervals=[];
   function element(id) {
@@ -20,7 +20,8 @@ function boot(initial='{}', storageFails=false, reducedMotion=false) {
     };elements.set(id,e);return e;
   }
   const document={getElementById:element,querySelector:element,querySelectorAll:()=>[],addEventListener:(k,v)=>handlers.set(k,v)};
-  const context={window:{},document,matchMedia:()=>({matches:reducedMotion,addEventListener(){}}),localStorage:{getItem:()=>{if(storageFails)throw Error('Unavailable');return stored;},setItem:(_,v)=>{if(storageFails)throw Error('Quota exceeded');stored=v;}},Date:class extends Date{static now(){return now;}},setInterval:fn=>intervals.push(fn),setTimeout:()=>0,clearTimeout:()=>{},Blob,URL};
+  const testMath=Object.create(Math);testMath.random=()=>randomValue;
+  const context={Math:testMath,window:{},document,matchMedia:()=>({matches:reducedMotion,addEventListener(){}}),localStorage:{getItem:()=>{if(storageFails)throw Error('Unavailable');return stored;},setItem:(_,v)=>{if(storageFails)throw Error('Quota exceeded');stored=v;}},Date:class extends Date{static now(){return now;}},setInterval:fn=>intervals.push(fn),setTimeout:()=>0,clearTimeout:()=>{},Blob,URL};
   vm.createContext(context);vm.runInContext(content,context);vm.runInContext(language,context);vm.runInContext(planner,context);vm.runInContext(app,context);
   return {language:context.window.STUDIO_LANGUAGE,model:context.window.STUDIO_PLANNER,data:context.window.STUDIO,element,stored:()=>JSON.parse(stored),advance(ms){now+=ms;intervals.forEach(fn=>fn());},click(id,dataset={}){const e=element(id);e.dataset=dataset;handlers.get('click')({target:e});},input(id,value){const e=element(id);e.value=value;e.fire('input');handlers.get('input')?.({target:e});},submit(value){element('planner-entry').value=value;handlers.get('submit')({target:element('planner-entry-form'),preventDefault(){}});},change(id,value){const e=element(id);e.value=value;handlers.get('change')?.({target:e});}};
 }
@@ -67,40 +68,58 @@ const malformedPlan=P.normalize({mode:'html',active:'missing',groups:{opinion:[{
 assert.equal(malformedPlan.mode,null);assert.equal(malformedPlan.active,'opinion');
 assert.equal(malformedPlan.groups.opinion.length,1,'Overlong stored entries are rejected');
 
-// Every task and functional section has one contextual first choice plus alternatives.
+// Each question has contextual vocabulary choices; cue points keep exact relevance.
 let bankSections=0;
 for(const t of D.themes)for(const part of D.parts){
   const count=part.id==='p2'?1:t[part.id].length;
-  for(let q=0;q<count;q++)for(const group of P.sections(part.id,t,q)){
-    const bank=site.language.bank(part.id,t,q,group);
-    assert.equal(bank.length,4,`${t.id}/${part.id}/${q}/${group.id}`);
-    assert.equal(bank[0].kind,'word','Every section has a contextual lexical choice');
-    assert.equal(new Set(bank.map(item=>item.text)).size,bank.length);
-    for(const item of bank){
-      assert.ok(P.validate(item.text).ok,item.text);
-      assert.ok(['B2','C1'].includes(item.level));assert.ok(item.meaning.length>10);
+  for(let q=0;q<count;q++){
+    const groups=P.sections(part.id,t,q),assigned=P.normalize(null,groups);
+    site.language.assign(assigned,part.id,t,q,groups,()=>.999);
+    for(const group of groups){
+      const bank=site.language.bank(part.id,t,q,group);
+      assert.ok(bank.length>=2,`${t.id}/${part.id}/${q}/${group.id}`);
+      assert.equal(new Set(bank.map(item=>item.text)).size,bank.length);
+      assert.ok(bank.some(item=>item.text===assigned.vocabulary[group.id]));
+      for(const item of bank){
+        assert.equal(item.kind,'word');assert.ok(P.validate(item.text).ok,item.text);
+        assert.ok(['B2','C1'].includes(item.level));assert.ok(item.meaning.length>10);
+      }
+      assert.equal(group.expressions.length,3);
+      for(const text of group.expressions)assert.ok(P.validate(text).ok,text);
+      bankSections++;
     }
-    bankSections++;
+    assert.equal(new Set(Object.values(assigned.vocabulary)).size,groups.length,'Avoid duplicate vocabulary within a task');
   }
 }
 assert.equal(bankSections,318);
 const choices=boot();choices.click('begin-planning');
 assert.match(choices.element('language-suggestion').innerHTML,/peaceful surroundings/);
 assert.equal((choices.element('language-suggestion').innerHTML.match(/class="suggested-text"/g)||[]).length,1);
-choices.input('planner-entry','my draft');choices.click('another-suggestion');
-assert.equal(choices.element('planner-entry').value,'my draft','Browsing a bank preserves the draft');
-assert.match(choices.element('language-suggestion').innerHTML,/From my perspective/);
-choices.click('pick-suggestion');assert.equal(choices.element('planner-entry').value,'my draft','Picking a suggestion preserves the draft');
-choices.click('section',{planSection:'reason'});
-assert.match(choices.element('language-suggestion').innerHTML,/a sense of belonging/);
+assert.equal((choices.element('planner-editor').innerHTML.match(/data-plan-expression=/g)||[]).length,3);
+assert.doesNotMatch(choices.element('planner-editor').innerHTML,/\b(?:B2|C1)\b|another-suggestion|Try another/);
+assert.doesNotMatch(choices.element('language-suggestion').innerHTML,/\b(?:B2|C1)\b|another-suggestion|Try another/);
+assert.doesNotMatch(app,/another-suggestion|>Try another <|\b(?:B2|C1)\b/);
+choices.input('planner-entry','my draft');choices.click('chunk',{planExpression:'0'});
+assert.equal(choices.element('planner-entry').value,'my draft','Adding a chunk preserves the draft');
+assert.equal(choices.stored().tasks['home-p1-0'].planner.groups.opinion[0].text,'I’d say…');
+assert.equal(choices.stored().tasks['home-p1-0'].planner.groups.opinion[0].kind,'expression');
+choices.click('chunk',{planExpression:'0'});
+assert.equal(choices.element('planner-entry').value,'my draft','Removing a chunk preserves the draft');
+assert.equal(choices.stored().tasks['home-p1-0'].planner.groups.opinion.length,0);
+choices.click('pick-suggestion');assert.equal(choices.element('planner-entry').value,'my draft','Picking vocabulary preserves the draft');
+choices.click('section',{planSection:'reason'});assert.match(choices.element('language-suggestion').innerHTML,/a sense of belonging/);
 choices.click('pick-suggestion');
 assert.equal(choices.stored().tasks['home-p1-0'].planner.groups.reason[0].text,'a sense of belonging');
-choices.click('section',{planSection:'opinion'});assert.match(choices.element('language-suggestion').innerHTML,/From my perspective/);
-const choicesRestored=boot(JSON.stringify(choices.stored()));
-assert.match(choicesRestored.element('language-suggestion').innerHTML,/From my perspective/);
-choices.click('next-question');choices.click('begin-planning');
-assert.match(choices.element('language-suggestion').innerHTML,/urban development/);
-assert.equal(choices.stored().tasks['home-p1-1'].planner.suggestions.opinion,0,'Bank position is isolated per question');
+choices.click('section',{planSection:'opinion'});assert.match(choices.element('language-suggestion').innerHTML,/peaceful surroundings/);
+const choicesRestored=boot(JSON.stringify(choices.stored()),false,false,.999);
+assert.match(choicesRestored.element('language-suggestion').innerHTML,/peaceful surroundings/,'Reloading keeps the assignment');
+const randomChoices=boot('{}',false,false,.999);randomChoices.click('begin-planning');
+assert.notEqual(randomChoices.stored().tasks['home-p1-0'].planner.vocabulary.opinion,choices.stored().tasks['home-p1-0'].planner.vocabulary.opinion,'Randomness changes fresh assignments');
+choices.click('next-question');choices.click('begin-planning');assert.match(choices.element('language-suggestion').innerHTML,/urban development/);
+assert.equal(choices.stored().tasks['home-p1-0'].planner.vocabulary.opinion,'peaceful surroundings','Assignments stay independent per question');
+const oldChoice=boot(JSON.stringify({tasks:{'home-p1-0':{planner:{suggestions:{opinion:2},groups:{opinion:[{text:'quiet park',kind:'word'}]}}}}}));
+assert.equal(oldChoice.stored().tasks['home-p1-0'].planner.groups.opinion[0].text,'quiet park','Older selected words survive migration');
+
 // The shared question block is outside every stage panel and is never hidden.
 const html=fs.readFileSync(new URL('../dist/index.html',import.meta.url),'utf8');
 assert.ok(html.indexOf('id="task-anchor"')<html.indexOf('data-stage-panel="question"'));
@@ -126,7 +145,7 @@ site.click('choose-style');stage(site,'planner-builder');
 site.submit('This is five words here');
 assert.equal(site.stored().tasks['home-p1-0'].planner.groups.opinion.length,0);
 assert.match(site.element('toast').textContent,/Four words maximum/);
-site.click('another-suggestion');site.click('pick-suggestion');site.click('choose-style');stage(site,'planner-builder');
+site.click('chunk',{planExpression:'0'});site.click('choose-style');stage(site,'planner-builder');
 site.submit('quiet park');site.click('choose-style');stage(site,'layout-stage');
 site.click('layout',{layout:'spidergram'});stage(site,'response-stage');
 assert.match(site.element('plan-display').innerHTML,/spidergram/);
@@ -216,4 +235,4 @@ unavailable.click('begin-planning');unavailable.submit('still works');assert.mat
 const corrupt=boot('{bad json');assert.equal(corrupt.element('clock').textContent,'04:00');
 const malformed=boot(JSON.stringify({theme:'unknown',part:'p9',indices:[],tasks:[]}));
 assert.equal(malformed.element('theme-name').textContent,'Home & hometown');
-console.log('Passed: 318 section banks, four-word B2/C1 choices, one suggestion, persistent question, saved suggestion browsing, five exclusive stages, guarded progression, manual and automatic review, motion preference, 78 tasks, 108 words, four-word limits, both plan layouts, task isolation, saved plans, gated speech clocks, independent preparation and storage recovery.');
+console.log('Passed: 318 vocabulary pools, restored chunks, one saved random word, no level labels or shuffle button, persistent question, five exclusive stages, guarded progression, manual and automatic review, motion preference, 78 tasks, 108 words, four-word limits, both plan layouts, task isolation, saved plans, gated speech clocks, independent preparation and storage recovery.');
